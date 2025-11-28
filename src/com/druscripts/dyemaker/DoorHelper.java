@@ -17,14 +17,6 @@ public class DoorHelper {
     }
 
     public boolean openDoor() {
-        RSObject door = findNearestDoor();
-        if (door != null) {
-            Polygon doorPoly = door.getConvexHull();
-            if (doorPoly != null && tryDoorInteraction(doorPoly)) {
-                return true;
-            }
-        }
-
         RSTile outsideTile = script.getSceneManager().getTile(Constants.AGGIE_SHOP_OUTSIDE);
         if (outsideTile != null) {
             Polygon tilePoly = outsideTile.getTileCube(0);
@@ -33,6 +25,14 @@ public class DoorHelper {
                 if (scaledPoly != null && tryDoorInteraction(scaledPoly)) {
                     return true;
                 }
+            }
+        }
+
+        RSObject door = findNearestDoor();
+        if (door != null) {
+            Polygon doorPoly = door.getConvexHull();
+            if (doorPoly != null && tryDoorInteraction(doorPoly)) {
+                return true;
             }
         }
 
