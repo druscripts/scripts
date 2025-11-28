@@ -32,6 +32,7 @@ public class MakeDyeTask extends Task {
 
     @Override
     public boolean execute() {
+        DyeMaker dm = (DyeMaker) script;
         DyeMaker.task = "Making dye";
         DyeType dyeType = DyeMaker.selectedDyeType;
 
@@ -62,7 +63,7 @@ public class MakeDyeTask extends Task {
             int made = lastInv[0].getAmount(new int[]{dyeType.getDyeId()}) - dyesBefore;
             if (made > 0) {
                 DyeMaker.dyesMade += made;
-                script.sendStat(Constants.STAT_DYE_MADE, made);
+                dm.sendStat(Constants.STAT_DYE_MADE, made);
             }
         }
 

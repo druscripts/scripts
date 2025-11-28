@@ -32,7 +32,7 @@ public class BankTask extends Task {
         DyeType dyeType = DyeMaker.selectedDyeType;
 
         if (dm.hasDyes() && DyeMaker.runStartTime > 0) {
-            script.sendStat(Constants.STAT_RUN_COMPLETED, System.currentTimeMillis() - DyeMaker.runStartTime);
+            dm.sendStat(Constants.STAT_RUN_COMPLETED, System.currentTimeMillis() - DyeMaker.runStartTime);
             DyeMaker.runStartTime = 0;
         }
 
