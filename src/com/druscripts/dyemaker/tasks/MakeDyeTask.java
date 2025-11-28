@@ -43,7 +43,7 @@ public class MakeDyeTask extends Task {
 
         int dyesBefore = inv.contains(dyeType.getDyeId()) ? inv.getAmount(new int[]{dyeType.getDyeId()}) : 0;
 
-        if (!selectIngredient(inv, dyeType)) return false;
+        if (!selectIngredient(dyeType)) return false;
         if (!clickOnAggie()) return false;
 
         boolean dialogueAppeared = script.pollFramesHuman(() ->
@@ -70,24 +70,18 @@ public class MakeDyeTask extends Task {
         return false;
     }
 
-    private boolean selectIngredient(ItemGroupResult inv, DyeType dyeType) {
-        ItemSearchResult item = inv.getItem(new int[]{dyeType.getIngredientId()});
-        if (item == null) return false;
+    private boolean selectIngredient(DyeType dyeType) {
+        ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(dyeType.getIngredientId()));
+        if (inv == null) return false;
 
-        // Early exit if ingredient is already selected
         Integer selectedSlot = inv.getSelectedSlot();
-        if (selectedSlot != null && selectedSlot == item.getSlot()) {
+        if (selectedSlot != null) {
+            // Already selected
             return true;
         }
 
-        // Unselect if something else is selected
-        if (selectedSlot != null) {
-            script.getWidgetManager().getInventory().unSelectItemIfSelected();
-            script.pollFramesHuman(() -> {
-                ItemGroupResult check = script.getWidgetManager().getInventory().search(Set.of(dyeType.getIngredientId()));
-                return check != null && check.getSelectedSlot() == null;
-            }, 1000, true);
-        }
+        ItemSearchResult item = inv.getItem(new int[]{dyeType.getIngredientId()});
+        if (item == null) return false;
 
         Rectangle bounds = item.getBounds();
         if (bounds == null) return false;

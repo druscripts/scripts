@@ -116,7 +116,6 @@ public class DyeMaker extends FreeScript {
         textY += 20;
 
         c.drawText("Task: " + task, x + 10, textY, Color.YELLOW.getRGB(), FONT);
-
     }
 
     private String formatRuntime(long millis) {
