@@ -74,10 +74,9 @@ public class BankTask extends Task {
         if (bankIngredients == null || !bankIngredients.contains(dyeType.getIngredientId())) return false;
         int ingredientsInBank = bankIngredients.getAmount(new int[]{dyeType.getIngredientId()});
 
+        int maxBatches = dyeType.isStackable() ? 28 : 27 / dyeType.getIngredientCount();
         int batches = Math.min(coinsInBank / Constants.COINS_PER_DYE, ingredientsInBank / dyeType.getIngredientCount());
-        if (!dyeType.isStackable()) {
-            batches = Math.min(batches, 27 / dyeType.getIngredientCount());
-        }
+        batches = Math.min(batches, maxBatches);
         if (batches <= 0) return false;
 
         int coins = batches * Constants.COINS_PER_DYE;
