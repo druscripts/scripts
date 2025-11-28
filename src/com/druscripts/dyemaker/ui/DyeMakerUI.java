@@ -1,121 +1,59 @@
 package com.druscripts.dyemaker.ui;
 
-import com.druscripts.dyemaker.Constants;
-import com.druscripts.utils.dialogwindow.CanvasUtils;
+import com.druscripts.dyemaker.DyeType;
+import com.druscripts.utils.dialogwindow.BaseScriptDialog;
 import com.druscripts.utils.dialogwindow.DialogConstants;
 import com.druscripts.utils.dialogwindow.components.CanvasRadioButton;
 import com.osmb.api.script.Script;
-import javafx.animation.AnimationTimer;
-import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 /**
- * Immediate mode Canvas-based UI for DyeMaker configuration.
- * Matches the styling of other DruScripts dialogs.
+ * DyeMaker configuration dialog using the standard BaseScriptDialog layout.
  */
-public class DyeMakerUI {
+public class DyeMakerUI extends BaseScriptDialog {
 
-    // Canvas dimensions
-    private static final double CANVAS_WIDTH = 400;
-    private static final double CANVAS_HEIGHT = 350;
+    private static final double RIGHT_COL_WIDTH = 280;
+    private static final double RIGHT_COL_HEIGHT = 368;
 
-    // Layout constants
-    private static final double PANEL_PADDING = DialogConstants.PADDING_STANDARD;
-
-    // Button constants
-    private static final double BUTTON_WIDTH = 200;
-    private static final double BUTTON_HEIGHT = DialogConstants.BUTTON_HEIGHT;
-
-    private final Script script;
-
-    // State
-    private Constants.DyeType selectedDyeType = Constants.DyeType.RED;
-
-    // Mouse state
-    private double mouseX = 0;
-    private double mouseY = 0;
-
-    // UI dismissed flag
-    private volatile boolean dismissed = false;
+    private DyeType selectedDyeType = DyeType.RED;
 
     public DyeMakerUI(Script script) {
-        this.script = script;
+        super(script, RIGHT_COL_WIDTH, RIGHT_COL_HEIGHT);
+        loadPreferences();
     }
 
-    public Scene buildScene() {
-        Canvas canvas = new Canvas(CANVAS_WIDTH, CANVAS_HEIGHT);
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-
-        // Mouse tracking
-        canvas.setOnMouseMoved(e -> {
-            mouseX = e.getX();
-            mouseY = e.getY();
-        });
-
-        canvas.setOnMouseClicked(this::handleClick);
-
-        // Animation loop - redraw everything each frame (immediate mode)
-        AnimationTimer timer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if (dismissed) {
-                    stop();
-                    return;
-                }
-                render(gc);
-            }
-        };
-        timer.start();
-
-        StackPane root = new StackPane(canvas);
-        root.setStyle("-fx-background-color: " + DialogConstants.BACKGROUND_DARK + ";");
-
-        Scene scene = new Scene(root, CANVAS_WIDTH, CANVAS_HEIGHT);
-        scene.setFill(Color.web(DialogConstants.BACKGROUND_DARK));
-        return scene;
+    @Override
+    protected String getScriptTitle() {
+        return "DyeMaker";
     }
 
-    private void render(GraphicsContext gc) {
-        CanvasUtils.clearCanvas(gc, CANVAS_WIDTH, CANVAS_HEIGHT);
+    @Override
+    protected String getScriptVersion() {
+        return "v1.0";
+    }
 
-        double x = PANEL_PADDING;
-        double y = PANEL_PADDING;
-        double panelWidth = CANVAS_WIDTH - (PANEL_PADDING * 2);
-        double panelHeight = CANVAS_HEIGHT - (PANEL_PADDING * 2);
+    @Override
+    protected String getDescription() {
+        return "Makes dyes at Aggie's shop in Draynor Village. " +
+               "Start near Draynor bank or Aggie's house with coins and ingredients in your bank.";
+    }
 
-        CanvasUtils.drawPanel(gc, x, y, panelWidth, panelHeight);
-
-        // Header
-        double contentY = y + 30;
-
-        gc.setFill(Color.web(DialogConstants.BRAND_PRIMARY));
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 20));
-        CanvasUtils.drawCenteredText(gc, "DyeMaker", CANVAS_WIDTH / 2, contentY);
-
-        contentY += 18;
-        gc.setFill(Color.web(DialogConstants.BRAND_SUBTLE));
-        gc.setFont(Font.font("Arial", 11));
-        CanvasUtils.drawCenteredText(gc, "druscripts.com", CANVAS_WIDTH / 2, contentY);
-
-        contentY += 40;
-
-        // Dye Type Selection
+    @Override
+    protected void renderRightColumnContent(GraphicsContext gc, double x, double y, double width) {
+        // Dye Type Selection label
         gc.setFill(Color.web(DialogConstants.TEXT_PRIMARY));
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 13));
-        gc.fillText("Select Dye Type:", x + PANEL_PADDING, contentY);
+        gc.fillText("Select Dye Type:", x, y);
 
-        contentY += 30;
+        double contentY = y + 30;
 
         // Render radio buttons for each dye type
-        for (Constants.DyeType dye : Constants.DyeType.values()) {
+        for (DyeType dye : DyeType.values()) {
             new CanvasRadioButton(
-                x + PANEL_PADDING,
+                x,
                 contentY,
                 dye.getDisplayName(),
                 selectedDyeType == dye,
@@ -125,52 +63,25 @@ public class DyeMakerUI {
             contentY += 35;
         }
 
-        contentY += 10;
+        contentY += 15;
 
         // Selected dye info
         gc.setFill(Color.web(DialogConstants.TEXT_MUTED));
         gc.setFont(Font.font("Arial", 11));
         String info = "Requires: " + selectedDyeType.getIngredientCount() + "x " +
                       selectedDyeType.getIngredientName() + " + 5 coins per dye";
-        gc.fillText(info, x + PANEL_PADDING, contentY);
-
-        // Start button
-        double buttonX = (CANVAS_WIDTH - BUTTON_WIDTH) / 2;
-        double buttonY = y + panelHeight - PANEL_PADDING - BUTTON_HEIGHT;
-        boolean startHover = CanvasUtils.isInRect(mouseX, mouseY, buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT);
-        CanvasUtils.drawPrimaryButton(gc, buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, "Start Script", startHover);
+        gc.fillText(info, x, contentY);
     }
 
-    private void handleClick(MouseEvent e) {
-        double clickX = e.getX();
-        double clickY = e.getY();
+    @Override
+    protected boolean handleRightColumnClick(double clickX, double clickY) {
+        double x = RIGHT_COLUMN_X + PANEL_PADDING;
+        double y = RIGHT_COLUMN_Y + 60 + 30;  // After "Configuration" header and label
 
-        double x = PANEL_PADDING;
-        double y = PANEL_PADDING;
-        double panelWidth = CANVAS_WIDTH - (PANEL_PADDING * 2);
-        double panelHeight = CANVAS_HEIGHT - (PANEL_PADDING * 2);
-
-        // Start button
-        double buttonX = (CANVAS_WIDTH - BUTTON_WIDTH) / 2;
-        double buttonY = y + panelHeight - PANEL_PADDING - BUTTON_HEIGHT;
-        if (CanvasUtils.isInRect(clickX, clickY, buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT)) {
-            dismissed = true;
-            javafx.application.Platform.runLater(() -> {
-                javafx.stage.Window window = ((Canvas) e.getSource()).getScene().getWindow();
-                if (window != null) {
-                    window.hide();
-                }
-            });
-            return;
-        }
-
-        // Dye type radio buttons - must match render positions
-        double contentY = y + 30 + 18 + 40 + 30;  // After header and label
-
-        for (Constants.DyeType dye : Constants.DyeType.values()) {
+        for (DyeType dye : DyeType.values()) {
             CanvasRadioButton radio = new CanvasRadioButton(
-                x + PANEL_PADDING,
-                contentY,
+                x,
+                y,
                 dye.getDisplayName(),
                 selectedDyeType == dye,
                 mouseX,
@@ -178,16 +89,27 @@ public class DyeMakerUI {
             );
             if (radio.isClicked(clickX, clickY)) {
                 selectedDyeType = dye;
-                return;
+                return true;
             }
-            contentY += 35;
+            y += 35;
         }
+        return false;
+    }
+
+    @Override
+    protected void onStart() {
+        // No preferences to save for now
+    }
+
+    @Override
+    protected void loadPreferences() {
+        // No preferences to load for now
     }
 
     /**
      * Get the selected dye type. Returns null if user closed without confirming.
      */
-    public Constants.DyeType getSelectedDyeType() {
-        return dismissed ? selectedDyeType : null;
+    public DyeType getSelectedDyeType() {
+        return isDismissed() ? selectedDyeType : null;
     }
 }

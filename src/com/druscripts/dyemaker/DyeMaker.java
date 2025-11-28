@@ -16,11 +16,12 @@ import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 @ScriptDefinition(
     name = "DyeMaker.druscripts.com",
-    description = "Makes dyes at Aggie's shop in Draynor Village. Start at Draynor bank.",
+    description = "Makes dyes at Aggie's shop in Draynor Village.",
     skillCategory = SkillCategory.OTHER,
     version = 1.0,
     author = "dru"
@@ -28,7 +29,7 @@ import java.util.Set;
 public class DyeMaker extends FreeScript {
 
     // Script state
-    public static Constants.DyeType selectedDyeType = null;
+    public static DyeType selectedDyeType = null;
     public static long startTime = System.currentTimeMillis();
     public static long runStartTime = 0; // Tracks when current run started
     public static int dyesMade = 0;
@@ -163,5 +164,45 @@ public class DyeMaker extends FreeScript {
         if (tile == null) return false;
         if (!tile.interact("Walk here")) return false;
         return pollFramesHuman(() -> isAtPosition(getWorldPosition(), target), 5000, true);
+    }
+
+    public boolean isInBankArea(WorldPosition pos) {
+        if (pos == null) return false;
+        int px = pos.getX();
+        int py = pos.getY();
+        int pz = pos.getPlane();
+        int ax = Constants.DRAYNOR_BANK_AREA.getX();
+        int ay = Constants.DRAYNOR_BANK_AREA.getY();
+        int width = Constants.DRAYNOR_BANK_AREA.getWidth();
+        int height = Constants.DRAYNOR_BANK_AREA.getHeight();
+        int plane = Constants.DRAYNOR_BANK_AREA.getPlane();
+        return pz == plane && px >= ax && px < ax + width && py >= ay && py < ay + height;
+    }
+
+    public WorldPosition getRandomBankTile() {
+        Random rand = new Random();
+        int x = Constants.DRAYNOR_BANK_AREA.getX() + rand.nextInt(Constants.DRAYNOR_BANK_AREA.getWidth());
+        int y = Constants.DRAYNOR_BANK_AREA.getY() + rand.nextInt(Constants.DRAYNOR_BANK_AREA.getHeight());
+        return new WorldPosition(x, y, Constants.DRAYNOR_BANK_AREA.getPlane());
+    }
+
+    public boolean isInAggieShop(WorldPosition pos) {
+        if (pos == null) return false;
+        int px = pos.getX();
+        int py = pos.getY();
+        int pz = pos.getPlane();
+
+        for (com.osmb.api.location.area.impl.RectangleArea area : Constants.AGGIE_SHOP_AREAS) {
+            int ax = area.getX();
+            int ay = area.getY();
+            int width = area.getWidth();
+            int height = area.getHeight();
+            int plane = area.getPlane();
+
+            if (pz == plane && px >= ax && px < ax + width && py >= ay && py < ay + height) {
+                return true;
+            }
+        }
+        return false;
     }
 }

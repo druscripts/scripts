@@ -4,6 +4,7 @@ import com.druscripts.utils.FreeScript;
 import com.druscripts.utils.Task;
 import com.druscripts.dyemaker.Constants;
 import com.druscripts.dyemaker.DyeMaker;
+import com.druscripts.dyemaker.DyeType;
 import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.scene.RSObject;
 
@@ -21,14 +22,14 @@ public class BankTask extends Task {
     @Override
     public boolean activate() {
         DyeMaker dm = (DyeMaker) script;
-        if (!Constants.isInBankArea(script.getWorldPosition())) return false;
+        if (!dm.isInBankArea(script.getWorldPosition())) return false;
         return dm.hasDyes() || !dm.hasMaterials();
     }
 
     @Override
     public boolean execute() {
         DyeMaker dm = (DyeMaker) script;
-        Constants.DyeType dyeType = DyeMaker.selectedDyeType;
+        DyeType dyeType = DyeMaker.selectedDyeType;
 
         if (dm.hasDyes() && DyeMaker.runStartTime > 0) {
             script.sendStat(Constants.STAT_RUN_COMPLETED, System.currentTimeMillis() - DyeMaker.runStartTime);
@@ -62,7 +63,7 @@ public class BankTask extends Task {
         return false;
     }
 
-    private boolean withdrawMaterials(Constants.DyeType dyeType) {
+    private boolean withdrawMaterials(DyeType dyeType) {
         DyeMaker.task = "Withdrawing";
 
         ItemGroupResult bankCoins = script.getWidgetManager().getBank().search(Set.of(Constants.COINS_ID));

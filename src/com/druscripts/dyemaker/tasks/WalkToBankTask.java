@@ -21,7 +21,7 @@ public class WalkToBankTask extends Task {
         DyeMaker dm = (DyeMaker) script;
         if (DyeMaker.selectedDyeType == null) return false;
         WorldPosition pos = script.getWorldPosition();
-        if (pos == null || Constants.isInBankArea(pos)) return false;
+        if (pos == null || dm.isInBankArea(pos)) return false;
         return dm.hasDyes() || !dm.hasMaterials();
     }
 
@@ -35,7 +35,7 @@ public class WalkToBankTask extends Task {
         WorldPosition pos = script.getWorldPosition();
         if (pos == null) return false;
 
-        if (Constants.isInAggieShop(pos)) {
+        if (dm.isInAggieShop(pos)) {
             if (!dm.isAtPosition(pos, Constants.AGGIE_DOOR)) {
                 if (!dm.walkToTile(Constants.AGGIE_DOOR)) return false;
             }
@@ -43,8 +43,8 @@ public class WalkToBankTask extends Task {
             if (!dm.walkToTile(Constants.AGGIE_SHOP_OUTSIDE)) return false;
         }
 
-        script.getWalker().walkTo(Constants.DRAYNOR_BANK_CENTER, dm.walkConfig);
-        script.pollFramesHuman(() -> Constants.isInBankArea(script.getWorldPosition()), 15000, true);
+        script.getWalker().walkTo(dm.getRandomBankTile(), dm.walkConfig);
+        script.pollFramesHuman(() -> dm.isInBankArea(script.getWorldPosition()), 15000, true);
         return false;
     }
 }

@@ -21,7 +21,7 @@ public class WalkToAggieTask extends Task {
         DyeMaker dm = (DyeMaker) script;
         if (!dm.hasMaterials()) return false;
         WorldPosition pos = script.getWorldPosition();
-        return pos != null && !Constants.isInAggieShop(pos);
+        return pos != null && !dm.isInAggieShop(pos);
     }
 
     @Override
