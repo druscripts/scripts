@@ -9,8 +9,8 @@ import com.osmb.api.script.ScriptDefinition;
  * Provides common functionality like title management and stats sending.
  *
  * When synced to free scripts, the package is transformed:
- * - Package: com.druscripts.utils.script -> com.druscripts.utils
- * - Imports: com.druscripts.utils.stats -> com.druscripts.utils
+ * - Package: com.druscripts.utils.script -> com.druscripts.free.utils
+ * - Imports: com.druscripts.utils.stats -> com.druscripts.free.utils
  */
 public abstract class FreeScript extends Script {
 
