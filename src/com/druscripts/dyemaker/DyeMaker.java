@@ -1,6 +1,7 @@
 package com.druscripts.dyemaker;
 
 import com.druscripts.utils.FreeScript;
+import com.druscripts.utils.PaintStyle;
 import com.druscripts.utils.Task;
 import com.druscripts.dyemaker.tasks.*;
 import com.osmb.api.script.ScriptDefinition;
@@ -12,8 +13,6 @@ import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.location.position.types.WorldPosition;
 import com.osmb.api.scene.RSTile;
 
-import java.awt.Color;
-import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -40,9 +39,6 @@ public class DyeMaker extends FreeScript {
         .breakDistance(0)
         .build();
 
-    // UI
-    private static final Font FONT = new Font("Arial", Font.PLAIN, 12);
-    private static final Font BOLD_FONT = new Font("Arial", Font.BOLD, 12);
 
     private List<Task> tasks;
 
@@ -88,34 +84,15 @@ public class DyeMaker extends FreeScript {
         double hours = Math.max(1.0E-9, (double) elapsed / 3600000.0);
         int perHour = (int) Math.round((double) dyesMade / hours);
 
-        int x = 5;
-        int y = 40;
-        int width = 220;
-        int height = 140;
-
-        // Background
-        c.fillRect(x, y, width, height, Color.decode("#01031C").getRGB(), 0.8);
-        c.drawRect(x, y, width, height, Color.WHITE.getRGB());
-
-        // Text
-        int textY = y + 20;
-        c.drawText("DyeMaker v" + getVersion(), x + 10, textY, Color.WHITE.getRGB(), BOLD_FONT);
-        textY += 20;
-
         String dyeTypeStr = selectedDyeType != null ? selectedDyeType.getDisplayName() : "Selecting...";
-        c.drawText("Making: " + dyeTypeStr, x + 10, textY, Color.CYAN.getRGB(), FONT);
-        textY += 20;
 
-        c.drawText("Runtime: " + runtime, x + 10, textY, Color.WHITE.getRGB(), FONT);
-        textY += 20;
-
-        c.drawText("Dyes made: " + dyesMade, x + 10, textY, Color.GREEN.getRGB(), FONT);
-        textY += 20;
-
-        c.drawText("Per hour: " + perHour, x + 10, textY, Color.CYAN.getRGB(), FONT);
-        textY += 20;
-
-        c.drawText("Task: " + task, x + 10, textY, Color.YELLOW.getRGB(), FONT);
+        PaintStyle.drawBackground(c, 200, 5);
+        int y = PaintStyle.drawTitle(c, "DyeMaker v" + getVersion());
+        y = PaintStyle.drawLine(c, "Making: " + dyeTypeStr, y, PaintStyle.TEXT_COLOR_BRAND);
+        y = PaintStyle.drawLine(c, "Task: " + task, y, PaintStyle.TEXT_COLOR_TASK);
+        y = PaintStyle.drawLine(c, "Runtime: " + runtime, y, PaintStyle.TEXT_COLOR_BODY);
+        y = PaintStyle.drawLine(c, "Dyes made: " + dyesMade, y, PaintStyle.TEXT_COLOR_SUCCESS);
+        PaintStyle.drawLine(c, "Per hour: " + perHour, y, PaintStyle.TEXT_COLOR_BODY);
     }
 
     private String formatRuntime(long millis) {
