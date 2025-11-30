@@ -1,4 +1,4 @@
-package com.druscripts.utils.tasks;
+package com.druscripts.utils.script;
 
 import com.osmb.api.script.Script;
 

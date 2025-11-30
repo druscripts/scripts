@@ -2,7 +2,7 @@ package com.druscripts.dyemaker;
 
 import com.druscripts.utils.script.FreeScript;
 import com.druscripts.utils.paint.PaintStyle;
-import com.druscripts.utils.tasks.Task;
+import com.druscripts.utils.script.Task;
 import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.data.DyeType;
 import com.druscripts.dyemaker.tasks.*;

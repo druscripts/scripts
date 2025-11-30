@@ -1,7 +1,7 @@
 package com.druscripts.dyemaker.tasks;
 
 import com.druscripts.utils.script.FreeScript;
-import com.druscripts.utils.tasks.Task;
+import com.druscripts.utils.script.Task;
 import com.druscripts.utils.dialogwindow.dialogs.ErrorDialog;
 import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.DyeMaker;
