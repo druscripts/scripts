@@ -22,7 +22,7 @@ public class SetupTask extends FreeTask {
     }
 
     @Override
-    public boolean execute() {
+    public void execute() {
         dm.task = "Setup";
 
         DyeMakerUI ui = new DyeMakerUI(script);
@@ -34,12 +34,11 @@ public class SetupTask extends FreeTask {
         if (dm.selectedDyeType == null) {
             script.stop();
             setupComplete = true;
-            return false;
+            return;
         }
 
         script.log(getClass(), "Selected: " + dm.selectedDyeType.getDisplayName());
         dm.task = "Starting...";
         setupComplete = true;
-        return true;
     }
 }

@@ -26,7 +26,7 @@ public class WalkToAggieTask extends FreeTask {
     }
 
     @Override
-    public boolean execute() {
+    public void execute() {
         dm.task = "Walking to Aggie";
 
         if (script.getWidgetManager().getBank().isVisible()) {
@@ -37,16 +37,15 @@ public class WalkToAggieTask extends FreeTask {
         script.getWidgetManager().getInventory().unSelectItemIfSelected();
 
         WorldPosition pos = script.getWorldPosition();
-        if (pos == null) return false;
+        if (pos == null) return;
 
         if (!dm.isAtPosition(pos, Constants.AGGIE_SHOP_OUTSIDE)) {
             script.getWalker().walkTo(Constants.AGGIE_SHOP_OUTSIDE, dm.walkConfig);
             script.pollFramesHuman(() -> dm.isAtPosition(script.getWorldPosition(), Constants.AGGIE_SHOP_OUTSIDE), 15000, true);
         }
 
-        if (!doorHelper.openDoor()) return false;
+        if (!doorHelper.openDoor()) return;
 
         dm.walkToTile(Constants.AGGIE_DOOR);
-        return false;
     }
 }

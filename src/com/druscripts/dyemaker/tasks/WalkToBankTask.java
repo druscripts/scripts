@@ -27,24 +27,23 @@ public class WalkToBankTask extends FreeTask {
     }
 
     @Override
-    public boolean execute() {
+    public void execute() {
         dm.task = "Walking to bank";
 
         script.getWidgetManager().getInventory().unSelectItemIfSelected();
 
         WorldPosition pos = script.getWorldPosition();
-        if (pos == null) return false;
+        if (pos == null) return;
 
         if (dm.isInAggieShop(pos)) {
             if (!dm.isAtPosition(pos, Constants.AGGIE_DOOR)) {
-                if (!dm.walkToTile(Constants.AGGIE_DOOR)) return false;
+                if (!dm.walkToTile(Constants.AGGIE_DOOR)) return;
             }
-            if (!doorHelper.openDoor()) return false;
-            if (!dm.walkToTile(Constants.AGGIE_SHOP_OUTSIDE)) return false;
+            if (!doorHelper.openDoor()) return;
+            if (!dm.walkToTile(Constants.AGGIE_SHOP_OUTSIDE)) return;
         }
 
         script.getWalker().walkTo(dm.getRandomBankTile(), dm.walkConfig);
         script.pollFramesHuman(() -> dm.isInBankArea(script.getWorldPosition()), 15000, true);
-        return false;
     }
 }

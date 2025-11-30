@@ -32,26 +32,26 @@ public class MakeDyeTask extends FreeTask {
     }
 
     @Override
-    public boolean execute() {
+    public void execute() {
         dm.task = "Making dye";
         DyeType dyeType = dm.selectedDyeType;
 
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(
             Set.of(dyeType.getIngredientId(), dyeType.getDyeId())
         );
-        if (inv == null) return false;
+        if (inv == null) return;
 
         int dyesBefore = inv.contains(dyeType.getDyeId()) ? inv.getAmount(new int[]{dyeType.getDyeId()}) : 0;
 
-        if (!selectIngredient(dyeType)) return false;
-        if (!clickOnAggie()) return false;
+        if (!selectIngredient(dyeType)) return;
+        if (!clickOnAggie()) return;
 
         boolean dialogueAppeared = script.pollFramesHuman(() ->
             script.getWidgetManager().getDialogue().getDialogueType() == DialogueType.ITEM_OPTION, 3000, true);
-        if (!dialogueAppeared) return false;
+        if (!dialogueAppeared) return;
 
         boolean selected = script.getWidgetManager().getDialogue().selectItem(dyeType.getDyeId());
-        if (!selected) return false;
+        if (!selected) return;
 
         ItemGroupResult[] lastInv = {null};
         boolean success = script.pollFramesHuman(() -> {
@@ -73,8 +73,6 @@ public class MakeDyeTask extends FreeTask {
                 dm.lapStartTime = System.currentTimeMillis();
             }
         }
-
-        return false;
     }
 
     private boolean selectIngredient(DyeType dyeType) {

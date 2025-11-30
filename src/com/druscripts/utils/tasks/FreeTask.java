@@ -28,8 +28,6 @@ public abstract class FreeTask {
 
     /**
      * Execute the task.
-     *
-     * @return true if task completed successfully
      */
-    public abstract boolean execute();
+    public abstract void execute();
 }

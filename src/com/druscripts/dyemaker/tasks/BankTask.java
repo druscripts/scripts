@@ -29,11 +29,11 @@ public class BankTask extends FreeTask {
     }
 
     @Override
-    public boolean execute() {
+    public void execute() {
         if (!script.getWidgetManager().getBank().isVisible()) {
             dm.task = "Opening bank";
             openBank();
-            return false;
+            return;
         }
 
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(Collections.emptySet());
@@ -55,15 +55,15 @@ public class BankTask extends FreeTask {
         if (coinsInBank < Constants.COINS_PER_DYE || ingredientsInBank < dyeType.getIngredientCount()) {
             dm.task = "Out of materials";
             showOutOfMaterialsAlertAndStopScript();
+            return;
         }
 
         dm.task = "Withdrawing";
         if (!withdrawMaterials(dyeType, coinsInBank, ingredientsInBank)) {
-            return false;
+            return;
         }
 
         script.getWidgetManager().getBank().close();
-        return true;
     }
 
     private int getBankAmount(int itemId) {
