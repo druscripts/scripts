@@ -33,11 +33,10 @@ public abstract class BaseScriptDialog {
     protected static final double LEFT_COLUMN_WIDTH = 280;
 
     // Header panel
-    protected static final double HEADER_PANEL_HEIGHT = 100;
+    protected static final double HEADER_PANEL_HEIGHT = 80;
     protected static final double HEADER_PADDING_TOP = 25;
     protected static final double HEADER_TITLE_Y = HEADER_PADDING_TOP + 10;
-    protected static final double HEADER_VERSION_Y = HEADER_TITLE_Y + 25;
-    protected static final double HEADER_AUTHOR_Y = HEADER_VERSION_Y + 20;
+    protected static final double HEADER_AUTHOR_Y = HEADER_TITLE_Y + 25;
 
     // Info panel
     protected static final double INFO_PANEL_HEIGHT = 250;
@@ -53,10 +52,10 @@ public abstract class BaseScriptDialog {
     protected static final double RIGHT_COLUMN_X = LEFT_COLUMN_X + LEFT_COLUMN_WIDTH + PANEL_SPACING;
     protected static final double RIGHT_COLUMN_Y = PANEL_PADDING;
 
-    // Website link
-    protected static final String WEBSITE_LINK_TEXT = "<a href=\"https://druscripts.com\">druscripts.com</a>";
-
     protected final Script script;
+    protected final String scriptName;
+    protected final String scriptVersion;
+    protected final String websiteLinkText;
 
     // Hyperlink component for website
     private Hyperlink websiteLink;
@@ -78,11 +77,17 @@ public abstract class BaseScriptDialog {
      * Create a new script dialog.
      *
      * @param script The script instance
+     * @param name The script name from @ScriptDefinition (e.g., "DyeMaker.druscripts.com")
+     * @param version The script version to display
      * @param rightColumnWidth Width of the right configuration column
      * @param rightColumnHeight Height of the right configuration column
      */
-    protected BaseScriptDialog(Script script, double rightColumnWidth, double rightColumnHeight) {
+    protected BaseScriptDialog(Script script, String name, String version, double rightColumnWidth, double rightColumnHeight) {
         this.script = script;
+        this.scriptName = name.split("\\.")[0];  // Extract display name before first dot
+        this.scriptVersion = "v" + version;
+        String websiteUrl = name.toLowerCase();
+        this.websiteLinkText = "<a href=\"https://" + websiteUrl + "\">" + websiteUrl + "</a>";
         this.rightColumnWidth = rightColumnWidth;
         this.rightColumnHeight = rightColumnHeight;
 
@@ -93,16 +98,6 @@ public abstract class BaseScriptDialog {
             RIGHT_COLUMN_Y + rightColumnHeight + PANEL_PADDING
         );
     }
-
-    /**
-     * Get the script title to display in the header.
-     */
-    protected abstract String getScriptTitle();
-
-    /**
-     * Get the script version to display in the header.
-     */
-    protected abstract String getScriptVersion();
 
     /**
      * Get the description text to display in the info panel.
@@ -190,19 +185,22 @@ public abstract class BaseScriptDialog {
         // Header panel
         drawPanel(gc, x, y, LEFT_COLUMN_WIDTH, HEADER_PANEL_HEIGHT);
 
+        // Title
         gc.setFill(Color.web(Theme.BRAND_PRIMARY));
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 20));
-        gc.fillText(getScriptTitle(), x + PANEL_PADDING, y + HEADER_TITLE_Y);
+        gc.fillText(scriptName, x + PANEL_PADDING, y + HEADER_TITLE_Y);
+        double titleWidth = getTextWidth(gc, scriptName);
 
+        // Version (same line, after title)
         gc.setFill(Color.web(Theme.BRAND_SUBTLE));
         gc.setFont(Font.font("Arial", 12));
-        gc.fillText(getScriptVersion(), x + PANEL_PADDING, y + HEADER_VERSION_Y);
+        gc.fillText(scriptVersion, x + PANEL_PADDING + titleWidth + 8, y + HEADER_TITLE_Y);
 
         // Website link
         gc.setFont(Font.font("Arial", 10));
         websiteLink = new Hyperlink(
             x + PANEL_PADDING, y + HEADER_AUTHOR_Y,
-            WEBSITE_LINK_TEXT,
+            websiteLinkText,
             LEFT_COLUMN_WIDTH - PANEL_PADDING * 2,
             Theme.BRAND_TERTIARY,
             mouseX, mouseY
