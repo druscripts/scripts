@@ -63,7 +63,14 @@ public class MakeDyeTask extends Task {
             int made = lastInv[0].getAmount(new int[]{dyeType.getDyeId()}) - dyesBefore;
             if (made > 0) {
                 DyeMaker.dyesMade += made;
-                dm.sendStat(Constants.STAT_DYE_MADE, made);
+                // Skip stats on first round (script may have started mid-run)
+                if (DyeMaker.firstRoundComplete) {
+                    long lapTimeMs = System.currentTimeMillis() - DyeMaker.lapStartTime;
+                    dm.sendStat(dyeType.getStatName(), made);
+                    dm.sendStat(dyeType.getLapTimeStatName(), lapTimeMs);
+                }
+                DyeMaker.firstRoundComplete = true;
+                DyeMaker.lapStartTime = System.currentTimeMillis();
             }
         }
 

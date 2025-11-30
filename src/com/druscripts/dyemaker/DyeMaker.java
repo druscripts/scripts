@@ -22,7 +22,7 @@ import java.util.Set;
     name = "DyeMaker.druscripts.com",
     description = "Makes dyes at Aggie's shop in Draynor Village.",
     skillCategory = SkillCategory.OTHER,
-    version = 1.0,
+    version = 1.1,
     author = "dru"
 )
 public class DyeMaker extends FreeScript {
@@ -30,9 +30,10 @@ public class DyeMaker extends FreeScript {
     // Script state
     public static DyeType selectedDyeType = null;
     public static long startTime = System.currentTimeMillis();
-    public static long runStartTime = 0; // Tracks when current run started
+    public static long lapStartTime = System.currentTimeMillis();
     public static int dyesMade = 0;
     public static String task = "Starting...";
+    public static boolean firstRoundComplete = false;
 
     public final WalkConfig walkConfig = new WalkConfig.Builder()
         .tileRandomisationRadius(0)
