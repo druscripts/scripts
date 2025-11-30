@@ -1,8 +1,10 @@
 package com.druscripts.dyemaker;
 
-import com.druscripts.utils.FreeScript;
-import com.druscripts.utils.PaintStyle;
-import com.druscripts.utils.Task;
+import com.druscripts.utils.script.FreeScript;
+import com.druscripts.utils.paint.PaintStyle;
+import com.druscripts.utils.tasks.FreeTask;
+import com.druscripts.dyemaker.data.Constants;
+import com.druscripts.dyemaker.data.DyeType;
 import com.druscripts.dyemaker.tasks.*;
 import com.osmb.api.script.ScriptDefinition;
 import com.osmb.api.script.SkillCategory;
@@ -43,7 +45,7 @@ public class DyeMaker extends FreeScript {
         .build();
 
 
-    private List<Task> tasks;
+    private List<FreeTask> tasks;
 
     public DyeMaker(Object scriptCore) {
         super(scriptCore);
@@ -69,7 +71,7 @@ public class DyeMaker extends FreeScript {
 
     @Override
     public int poll() {
-        for (Task t : tasks) {
+        for (FreeTask t : tasks) {
             if (t.activate()) {
                 t.execute();
                 return 0;
@@ -84,8 +86,8 @@ public class DyeMaker extends FreeScript {
         long elapsed = System.currentTimeMillis() - startTime;
         String runtime = formatRuntime(elapsed);
 
-        double hours = Math.max(1.0E-9, (double) elapsed / 3600000.0);
-        int perHour = (int) Math.round((double) dyesMade / hours);
+        double hours = Math.max(1/3600.0, (double) elapsed / 3600000.0);
+        int perHour = (int) Math.floor((double) dyesMade / hours);
 
         String dyeTypeStr = selectedDyeType != null ? selectedDyeType.getDisplayName() : "Selecting...";
 
@@ -110,8 +112,6 @@ public class DyeMaker extends FreeScript {
     public boolean promptBankTabDialogue() {
         return true;
     }
-
-    // Shared helper methods for tasks
 
     public boolean hasMaterials() {
         if (selectedDyeType == null) return false;

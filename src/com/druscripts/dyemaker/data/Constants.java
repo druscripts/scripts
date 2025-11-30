@@ -1,4 +1,4 @@
-package com.druscripts.dyemaker;
+package com.druscripts.dyemaker.data;
 
 import com.osmb.api.location.area.impl.RectangleArea;
 import com.osmb.api.location.position.types.WorldPosition;

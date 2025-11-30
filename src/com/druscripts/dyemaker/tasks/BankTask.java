@@ -1,18 +1,20 @@
 package com.druscripts.dyemaker.tasks;
 
-import com.druscripts.utils.FreeScript;
-import com.druscripts.utils.Task;
-import com.druscripts.dyemaker.Constants;
+import com.druscripts.utils.script.FreeScript;
+import com.druscripts.utils.tasks.FreeTask;
+import com.druscripts.utils.dialogwindow.dialogs.ErrorDialog;
+import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.DyeMaker;
-import com.druscripts.dyemaker.DyeType;
+import com.druscripts.dyemaker.data.DyeType;
 import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.scene.RSObject;
+import javafx.scene.Scene;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class BankTask extends Task {
+public class BankTask extends FreeTask {
 
     private final DyeMaker dm;
 
@@ -28,8 +30,6 @@ public class BankTask extends Task {
 
     @Override
     public boolean execute() {
-        DyeType dyeType = dm.selectedDyeType;
-
         if (!script.getWidgetManager().getBank().isVisible()) {
             dm.task = "Opening bank";
             openBank();
@@ -37,33 +37,33 @@ public class BankTask extends Task {
         }
 
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(Collections.emptySet());
-        if (inv != null && inv.getFreeSlots() < script.getWidgetManager().getInventory().getGroupSize()) {
+        if (inv != null && inv.getFreeSlots() < Constants.MAX_INVENTORY_SIZE) {
             dm.task = "Depositing";
             script.getWidgetManager().getBank().depositAll(Collections.emptySet());
             script.pollFramesHuman(() -> {
+                // must re-query to get updated inventory status
                 ItemGroupResult check = script.getWidgetManager().getInventory().search(Collections.emptySet());
-                return check == null || check.getFreeSlots() == script.getWidgetManager().getInventory().getGroupSize();
+                return check == null || check.getFreeSlots() == Constants.MAX_INVENTORY_SIZE;
             }, 3000, true);
         }
 
-        // Query bank materials once
+        DyeType dyeType = dm.selectedDyeType;
+
         int coinsInBank = getBankAmount(Constants.COINS_ID);
         int ingredientsInBank = getBankAmount(dyeType.getIngredientId());
 
-        // Check if we're truly out of materials
         if (coinsInBank < Constants.COINS_PER_DYE || ingredientsInBank < dyeType.getIngredientCount()) {
             dm.task = "Out of materials";
-            showOutOfMaterialsAlert();
-            return false;
+            showOutOfMaterialsAlertAndStopScript();
         }
 
-        // Try to withdraw - if it fails, we'll retry next poll
+        dm.task = "Withdrawing";
         if (!withdrawMaterials(dyeType, coinsInBank, ingredientsInBank)) {
             return false;
         }
 
         script.getWidgetManager().getBank().close();
-        return false;
+        return true;
     }
 
     private int getBankAmount(int itemId) {
@@ -77,8 +77,6 @@ public class BankTask extends Task {
      * Returns true if successful, false if failed (will retry next poll).
      */
     private boolean withdrawMaterials(DyeType dyeType, int coinsInBank, int ingredientsInBank) {
-        dm.task = "Withdrawing";
-
         // For stackable ingredients, full inventory available. For non-stackable,
         // one slot is reserved for coins so we subtract 1.
         int maxBatches = dyeType.isStackable()
@@ -135,14 +133,14 @@ public class BankTask extends Task {
         script.pollFramesHuman(() -> script.getWidgetManager().getBank().isVisible(), (int)(dist * 1200 + 600), true);
     }
 
-    private void showOutOfMaterialsAlert() {
-        javafx.application.Platform.runLater(() -> {
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
-            alert.setTitle("Script Complete");
-            alert.setHeaderText("Out of Materials");
-            alert.setContentText("Total dyes made: " + dm.dyesMade);
-            alert.showAndWait();
-        });
-        script.stop();
+    private void showOutOfMaterialsAlertAndStopScript() {
+        String message = "Total dyes made: " + dm.dyesMade;
+        Scene errorScene = ErrorDialog.createErrorScene(
+            "DyeMaker",
+            "Out of Materials",
+            message,
+            script::stop
+        );
+        script.getStageController().show(errorScene, "Script Complete", false);
     }
 }

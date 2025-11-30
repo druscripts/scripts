@@ -1,4 +1,4 @@
-package com.druscripts.dyemaker;
+package com.druscripts.dyemaker.data;
 
 public enum DyeType {
     RED(1763, 1951, 3, "Redberries", false, "red_dye_made", "red_lap_time"),
