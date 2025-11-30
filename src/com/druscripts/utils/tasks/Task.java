@@ -4,18 +4,13 @@ import com.osmb.api.script.Script;
 
 /**
  * Abstract base class for free script tasks.
- * Uses the base Script class instead of DruScript for simpler dependencies.
- *
- * When synced to free scripts, the package and class name are transformed:
- * - Package: com.druscripts.utils.tasks -> com.druscripts.free.utils
- * - Class: FreeTask -> Task
- * - Type: Script -> FreeScript
+ * Uses the base Script class instead of PremiumScript for simpler dependencies.
  */
-public abstract class FreeTask {
+public abstract class Task {
 
     protected final Script script;
 
-    public FreeTask(Script script) {
+    public Task(Script script) {
         this.script = script;
     }
 

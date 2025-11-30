@@ -1,12 +1,12 @@
 package com.druscripts.dyemaker.tasks;
 
 import com.druscripts.utils.script.FreeScript;
-import com.druscripts.utils.tasks.FreeTask;
+import com.druscripts.utils.tasks.Task;
 import com.druscripts.dyemaker.DyeMaker;
 import com.druscripts.dyemaker.ui.DyeMakerUI;
 import javafx.scene.Scene;
 
-public class SetupTask extends FreeTask {
+public class SetupTask extends Task {
 
     private final DyeMaker dm;
     private boolean setupComplete = false;

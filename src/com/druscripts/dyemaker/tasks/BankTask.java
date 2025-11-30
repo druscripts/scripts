@@ -1,7 +1,7 @@
 package com.druscripts.dyemaker.tasks;
 
 import com.druscripts.utils.script.FreeScript;
-import com.druscripts.utils.tasks.FreeTask;
+import com.druscripts.utils.tasks.Task;
 import com.druscripts.utils.dialogwindow.dialogs.ErrorDialog;
 import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.DyeMaker;
@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class BankTask extends FreeTask {
+public class BankTask extends Task {
 
     private final DyeMaker dm;
 

@@ -2,7 +2,7 @@ package com.druscripts.dyemaker;
 
 import com.druscripts.utils.script.FreeScript;
 import com.druscripts.utils.paint.PaintStyle;
-import com.druscripts.utils.tasks.FreeTask;
+import com.druscripts.utils.tasks.Task;
 import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.data.DyeType;
 import com.druscripts.dyemaker.tasks.*;
@@ -45,7 +45,7 @@ public class DyeMaker extends FreeScript {
         .build();
 
 
-    private List<FreeTask> tasks;
+    private List<Task> tasks;
 
     public DyeMaker(Object scriptCore) {
         super(scriptCore);
@@ -71,7 +71,7 @@ public class DyeMaker extends FreeScript {
 
     @Override
     public int poll() {
-        for (FreeTask t : tasks) {
+        for (Task t : tasks) {
             if (t.activate()) {
                 t.execute();
                 return 0;

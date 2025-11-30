@@ -1,7 +1,7 @@
 package com.druscripts.dyemaker.tasks;
 
 import com.druscripts.utils.script.FreeScript;
-import com.druscripts.utils.tasks.FreeTask;
+import com.druscripts.utils.tasks.Task;
 import com.druscripts.dyemaker.DyeMaker;
 import com.druscripts.dyemaker.data.DyeType;
 import com.osmb.api.input.MenuEntry;
@@ -16,7 +16,7 @@ import com.osmb.api.utils.UIResultList;
 
 import java.util.Set;
 
-public class MakeDyeTask extends FreeTask {
+public class MakeDyeTask extends Task {
 
     private final DyeMaker dm;
 

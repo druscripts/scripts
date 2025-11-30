@@ -1,13 +1,13 @@
 package com.druscripts.dyemaker.tasks;
 
 import com.druscripts.utils.script.FreeScript;
-import com.druscripts.utils.tasks.FreeTask;
+import com.druscripts.utils.tasks.Task;
 import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.DoorHelper;
 import com.druscripts.dyemaker.DyeMaker;
 import com.osmb.api.location.position.types.WorldPosition;
 
-public class WalkToAggieTask extends FreeTask {
+public class WalkToAggieTask extends Task {
 
     private final DyeMaker dm;
     private final DoorHelper doorHelper;
