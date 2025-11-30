@@ -24,7 +24,7 @@ import java.util.Set;
     name = "DyeMaker.druscripts.com",
     description = "Makes dyes at Aggie's shop in Draynor Village.",
     skillCategory = SkillCategory.OTHER,
-    version = 1.1,
+    version = 1.2,
     author = "dru"
 )
 public class DyeMaker extends FreeScript {
