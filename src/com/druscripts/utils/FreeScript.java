@@ -35,7 +35,7 @@ public abstract class FreeScript extends Script {
         }
 
         // Initialize stats client
-        this.statsClient = new StatsClient(getScriptSlug(), this.version, getOSMBUsername());
+        this.statsClient = new StatsClient(getScriptSlug(), this.version);
     }
 
     /**
