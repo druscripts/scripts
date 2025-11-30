@@ -1,7 +1,6 @@
 package com.druscripts.dyemaker;
 
 import com.druscripts.dyemaker.data.Constants;
-import com.druscripts.utils.script.FreeScript;
 import com.osmb.api.input.MenuEntry;
 import com.osmb.api.scene.RSObject;
 import com.osmb.api.scene.RSTile;
@@ -11,14 +10,14 @@ import java.util.List;
 
 public class DoorHelper {
 
-    private final FreeScript script;
+    private final DyeMaker dm;
 
-    public DoorHelper(FreeScript script) {
-        this.script = script;
+    public DoorHelper(DyeMaker script) {
+        this.dm = script;
     }
 
     public boolean openDoor() {
-        RSTile outsideTile = script.getSceneManager().getTile(Constants.AGGIE_SHOP_OUTSIDE);
+        RSTile outsideTile = dm.getSceneManager().getTile(Constants.AGGIE_SHOP_OUTSIDE);
         if (outsideTile != null) {
             Polygon tilePoly = outsideTile.getTileCube(0);
             if (tilePoly != null) {
@@ -43,7 +42,7 @@ public class DoorHelper {
     private boolean tryDoorInteraction(Polygon poly) {
         final String[] foundAction = {null};
 
-        script.getFinger().tap(poly, entries -> {
+        dm.getFinger().tap(poly, entries -> {
             if (entries == null || entries.isEmpty()) return null;
 
             for (MenuEntry entry : entries) {
@@ -65,7 +64,7 @@ public class DoorHelper {
         if ("close".equals(foundAction[0])) {
             return true;
         } else if ("open".equals(foundAction[0])) {
-            script.pollFramesHuman(() -> false, 800, false);
+            dm.pollFramesHuman(() -> false, 800, false);
             return true;
         }
 
@@ -73,9 +72,9 @@ public class DoorHelper {
     }
 
     private RSObject findNearestDoor() {
-        List<RSObject> doors = script.getObjectManager().getObjects(obj ->
+        List<RSObject> doors = dm.getObjectManager().getObjects(obj ->
             obj.getName() != null && obj.getName().equalsIgnoreCase("Door")
         );
-        return doors.isEmpty() ? null : (RSObject) script.getUtils().getClosest(doors);
+        return doors.isEmpty() ? null : (RSObject) dm.getUtils().getClosest(doors);
     }
 }

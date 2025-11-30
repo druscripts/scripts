@@ -25,34 +25,41 @@ public class BankTask extends Task {
 
     @Override
     public boolean activate() {
-        return dm.isInBankArea(script.getWorldPosition()) && (dm.hasDyes() || !dm.hasMaterials());
+        return dm.isInBankArea(dm.getWorldPosition()) && (dm.hasDyes() || !dm.hasMaterials());
     }
 
     @Override
     public void execute() {
-        if (!script.getWidgetManager().getBank().isVisible()) {
+        if (!dm.getWidgetManager().getBank().isVisible()) {
             dm.task = "Opening bank";
             openBank();
             return;
         }
 
-        ItemGroupResult inv = script.getWidgetManager().getInventory().search(Collections.emptySet());
-        if (inv != null && inv.getFreeSlots() < Constants.MAX_INVENTORY_SIZE) {
+        ItemGroupResult inv = dm.getWidgetManager().getInventory().search(Collections.emptySet());
+        if (inv == null) return;
+        // NOTE: Easier to deposit everything even if partial withdrawl was successful last poll
+        if (inv.getFreeSlots() < Constants.MAX_INVENTORY_SIZE) {
             dm.task = "Depositing";
-            script.getWidgetManager().getBank().depositAll(Collections.emptySet());
-            script.pollFramesHuman(() -> {
-                // must re-query to get updated inventory status
-                ItemGroupResult check = script.getWidgetManager().getInventory().search(Collections.emptySet());
+            dm.getWidgetManager().getBank().depositAll(Collections.emptySet());
+
+            // sanity check
+            boolean depositSuccess = dm.pollFramesHuman(() -> {
+                ItemGroupResult check = dm.getWidgetManager().getInventory().search(Collections.emptySet());
                 return check == null || check.getFreeSlots() == Constants.MAX_INVENTORY_SIZE;
             }, 3000, true);
+
+            if (!depositSuccess) return;
         }
 
-        DyeType dyeType = dm.selectedDyeType;
-
         int coinsInBank = getBankAmount(Constants.COINS_ID);
+
+        DyeType dyeType = dm.selectedDyeType;
         int ingredientsInBank = getBankAmount(dyeType.getIngredientId());
 
-        if (coinsInBank < Constants.COINS_PER_DYE || ingredientsInBank < dyeType.getIngredientCount()) {
+        if (coinsInBank < Constants.COINS_PER_DYE ||
+            ingredientsInBank < dyeType.getIngredientCount())
+        {
             dm.task = "Out of materials";
             showOutOfMaterialsAlertAndStopScript();
             return;
@@ -63,84 +70,69 @@ public class BankTask extends Task {
             return;
         }
 
-        script.getWidgetManager().getBank().close();
+        dm.getWidgetManager().getBank().close();
     }
 
     private int getBankAmount(int itemId) {
-        ItemGroupResult result = script.getWidgetManager().getBank().search(Set.of(itemId));
+        ItemGroupResult result = dm.getWidgetManager().getBank().search(Set.of(itemId));
         if (result == null || !result.contains(itemId)) return 0;
-        return result.getAmount(new int[]{itemId});
+        return result.getAmount(itemId);
     }
 
-    /**
-     * Attempt to withdraw materials from bank.
-     * Returns true if successful, false if failed (will retry next poll).
-     */
     private boolean withdrawMaterials(DyeType dyeType, int coinsInBank, int ingredientsInBank) {
-        // For stackable ingredients, full inventory available. For non-stackable,
-        // one slot is reserved for coins so we subtract 1.
-        int maxBatches = dyeType.isStackable()
-            ? Constants.MAX_INVENTORY_SIZE
-            : (Constants.MAX_INVENTORY_SIZE - 1) / dyeType.getIngredientCount();
-        int batches = Math.min(coinsInBank / Constants.COINS_PER_DYE, ingredientsInBank / dyeType.getIngredientCount());
-        batches = Math.min(batches, maxBatches);
+        int totalBatches = Math.min(
+            coinsInBank / Constants.COINS_PER_DYE,
+            ingredientsInBank / dyeType.getIngredientCount());
 
-        // Withdraw coins if not already in inventory
-        ItemGroupResult invCoins = script.getWidgetManager().getInventory().search(Set.of(Constants.COINS_ID));
-        if (invCoins == null || !invCoins.contains(Constants.COINS_ID)) {
-            int coins = batches * Constants.COINS_PER_DYE;
-            if (!script.getWidgetManager().getBank().withdraw(Constants.COINS_ID, coins)) {
-                return false;
-            }
-            boolean coinsAppeared = script.pollFramesHuman(() -> {
-                ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(Constants.COINS_ID));
-                return inv != null && inv.contains(Constants.COINS_ID);
-            }, 3000, true);
-            if (!coinsAppeared) {
-                return false;
-            }
+        int batchesThisRun = Math.min(totalBatches, dyeType.getBatchesPerRun());
+
+        boolean result = withdrawItem(Constants.COINS_ID, batchesThisRun * Constants.COINS_PER_DYE);
+        if (result == false) return false;
+
+        result = withdrawItem(dyeType.getIngredientId(), batchesThisRun * dyeType.getIngredientCount());
+        return result;
+    }
+
+    private boolean withdrawItem(int id, int amount) {
+        // search should auto switch to inv. null means inv not visible
+        ItemGroupResult inv = dm.getWidgetManager().getInventory().search(Set.of(id));
+        if (inv == null) return false;
+        // will always contain correct amount due to deposit at start of task
+        if (inv.contains(id)) return true;
+
+        if (!dm.getWidgetManager().getBank().withdraw(id, amount)) {
+            return false;
         }
 
-        // Withdraw ingredients if not already in inventory
-        ItemGroupResult invIngredients = script.getWidgetManager().getInventory().search(Set.of(dyeType.getIngredientId()));
-        if (invIngredients == null || !invIngredients.contains(dyeType.getIngredientId())) {
-            int ingredients = batches * dyeType.getIngredientCount();
-            if (!script.getWidgetManager().getBank().withdraw(dyeType.getIngredientId(), ingredients)) {
-                return false;
-            }
-            boolean ingredientsAppeared = script.pollFramesHuman(() -> {
-                ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(dyeType.getIngredientId()));
-                return inv != null && inv.contains(dyeType.getIngredientId());
-            }, 3000, true);
-            if (!ingredientsAppeared) {
-                return false;
-            }
-        }
+        // sanity check
+        boolean withdrawn = dm.pollFramesHuman(() -> {
+            ItemGroupResult check = dm.getWidgetManager().getInventory().search(Set.of(id));
+            return check != null && check.contains(id);
+        }, 3000, true);
 
-        return true;
+        return withdrawn;
     }
 
     private void openBank() {
-        List<RSObject> banks = script.getObjectManager().getObjects(obj ->
+        List<RSObject> banks = dm.getObjectManager().getObjects(obj ->
             Constants.BANK_NAME.equalsIgnoreCase(obj.getName()) && obj.canReach()
         );
         if (banks.isEmpty()) return;
 
-        RSObject bank = (RSObject) script.getUtils().getClosest(banks);
+        RSObject bank = (RSObject) dm.getUtils().getClosest(banks);
         if (!bank.interact(Constants.BANK_ACTION)) return;
 
-        double dist = bank.distance(script.getWorldPosition());
-        script.pollFramesHuman(() -> script.getWidgetManager().getBank().isVisible(), (int)(dist * 1200 + 600), true);
+        double dist = bank.distance(dm.getWorldPosition());
+        dm.pollFramesHuman(() -> dm.getWidgetManager().getBank().isVisible(), (int)(dist * 1200 + 600), true);
     }
 
     private void showOutOfMaterialsAlertAndStopScript() {
-        String message = "Total dyes made: " + dm.dyesMade;
         Scene errorScene = ErrorDialog.createErrorScene(
             "DyeMaker",
             "Out of Materials",
-            message,
-            script::stop
+            "Total dyes made: " + dm.dyesMade,
+            dm::stop
         );
-        script.getStageController().show(errorScene, "Script Complete", false);
+        dm.getStageController().show(errorScene, "Script Complete", false);
     }
 }

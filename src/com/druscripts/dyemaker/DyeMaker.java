@@ -115,18 +115,25 @@ public class DyeMaker extends FreeScript {
 
     public boolean hasMaterials() {
         if (selectedDyeType == null) return false;
+
         ItemGroupResult inv = getWidgetManager().getInventory().search(
             Set.of(selectedDyeType.getIngredientId(), Constants.COINS_ID)
         );
         if (inv == null) return false;
+
         if (!inv.contains(Constants.COINS_ID)) return false;
         if (!inv.contains(selectedDyeType.getIngredientId())) return false;
-        int amount = inv.getAmount(new int[]{selectedDyeType.getIngredientId()});
-        return amount >= selectedDyeType.getIngredientCount();
+
+        int ingredientAmount = inv.getAmount(selectedDyeType.getIngredientId());
+        int coinAmount = inv.getAmount(Constants.COINS_ID);
+
+        return ingredientAmount >= selectedDyeType.getIngredientCount() &&
+            coinAmount >= Constants.COINS_PER_DYE;
     }
 
     public boolean hasDyes() {
         if (selectedDyeType == null) return false;
+
         ItemGroupResult inv = getWidgetManager().getInventory().search(Set.of(selectedDyeType.getDyeId()));
         return inv != null && inv.contains(selectedDyeType.getDyeId());
     }
