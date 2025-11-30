@@ -1,6 +1,6 @@
 package com.druscripts.utils.dialogwindow.components;
 
-import com.druscripts.utils.dialogwindow.DialogConstants;
+import com.druscripts.utils.dialogwindow.Theme;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -9,7 +9,7 @@ import javafx.scene.text.Font;
  * Reusable radio button component for immediate mode Canvas UIs.
  * Renders a radio button with text label.
  */
-public class CanvasRadioButton {
+public class RadioButton {
 
     private static final double RADIO_SIZE = 10;  // Smaller than 12px font
     private static final double TEXT_OFFSET = RADIO_SIZE + 6;  // Space between radio and text
@@ -31,7 +31,7 @@ public class CanvasRadioButton {
      * @param mouseX Current mouse X position
      * @param mouseY Current mouse Y position
      */
-    public CanvasRadioButton(double x, double y, String text, boolean selected, double mouseX, double mouseY) {
+    public RadioButton(double x, double y, String text, boolean selected, double mouseX, double mouseY) {
         this.x = x;
         this.y = y;
         this.text = text;
@@ -48,19 +48,19 @@ public class CanvasRadioButton {
         double circleTopY = circleCenterY - RADIO_SIZE / 2;
 
         // Outer circle
-        gc.setStroke(selected ? Color.web(DialogConstants.BRAND_PRIMARY) : Color.web(DialogConstants.TEXT_SECONDARY));
+        gc.setStroke(selected ? Color.web(Theme.BRAND_PRIMARY) : Color.web(Theme.TEXT_SECONDARY));
         gc.setLineWidth(1.5);
         gc.strokeOval(x, circleTopY, RADIO_SIZE, RADIO_SIZE);
 
         // Inner circle (if selected)
         if (selected) {
-            gc.setFill(Color.web(DialogConstants.BRAND_PRIMARY));
+            gc.setFill(Color.web(Theme.BRAND_PRIMARY));
             double innerSize = RADIO_SIZE - 4;
             gc.fillOval(x + 2, circleTopY + 2, innerSize, innerSize);
         }
 
         // Label
-        gc.setFill(hover ? Color.web(DialogConstants.TEXT_PRIMARY) : Color.web(DialogConstants.TEXT_SECONDARY));
+        gc.setFill(hover ? Color.web(Theme.TEXT_PRIMARY) : Color.web(Theme.TEXT_SECONDARY));
         gc.setFont(Font.font("Arial", 12));
         gc.fillText(text, x + TEXT_OFFSET, y);
     }

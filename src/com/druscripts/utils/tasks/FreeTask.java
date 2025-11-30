@@ -1,4 +1,4 @@
-package com.druscripts.utils;
+package com.druscripts.utils.tasks;
 
 import com.osmb.api.script.Script;
 
@@ -11,11 +11,11 @@ import com.osmb.api.script.Script;
  * - Class: FreeTask -> Task
  * - Type: Script -> FreeScript
  */
-public abstract class Task {
+public abstract class FreeTask {
 
     protected final Script script;
 
-    public Task(Script script) {
+    public FreeTask(Script script) {
         this.script = script;
     }
 

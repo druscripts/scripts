@@ -1,10 +1,10 @@
 package com.druscripts.utils.dialogwindow;
 
 /**
- * Common UI constants for DruScripts dialogs including colors, dimensions, and spacing.
+ * Common UI theme constants for DruScripts dialogs including colors, dimensions, and spacing.
  * Use these constants to maintain consistent branding and layout across all scripts.
  */
-public class DialogConstants {
+public class Theme {
 
     // ==================== Brand Colors ====================
 
@@ -130,7 +130,7 @@ public class DialogConstants {
     public static final int STATE_BUTTON_SIZE = 14;
 
     // Private constructor to prevent instantiation
-    private DialogConstants() {
-        throw new AssertionError("DialogConstants class should not be instantiated");
+    private Theme() {
+        throw new AssertionError("Theme class should not be instantiated");
     }
 }

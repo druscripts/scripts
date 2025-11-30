@@ -1,6 +1,6 @@
-package com.druscripts.utils;
+package com.druscripts.utils.script;
 
-import com.druscripts.utils.StatsClient;
+import com.druscripts.utils.stats.StatsClient;
 import com.osmb.api.script.Script;
 import com.osmb.api.script.ScriptDefinition;
 

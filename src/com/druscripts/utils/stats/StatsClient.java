@@ -1,4 +1,4 @@
-package com.druscripts.utils;
+package com.druscripts.utils.stats;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;

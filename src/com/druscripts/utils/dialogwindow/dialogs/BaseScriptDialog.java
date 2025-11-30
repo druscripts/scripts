@@ -1,5 +1,8 @@
-package com.druscripts.utils.dialogwindow;
+package com.druscripts.utils.dialogwindow.dialogs;
 
+import com.druscripts.utils.dialogwindow.CanvasUtils;
+import com.druscripts.utils.dialogwindow.Theme;
+import com.druscripts.utils.dialogwindow.components.Hyperlink;
 import com.osmb.api.script.Script;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
@@ -19,10 +22,10 @@ import javafx.scene.text.FontWeight;
  */
 public abstract class BaseScriptDialog {
 
-    // Layout constants - use DialogConstants for consistency
-    protected static final double PANEL_PADDING = DialogConstants.PADDING_STANDARD;
-    protected static final double PANEL_SPACING = DialogConstants.PADDING_STANDARD;
-    protected static final double PANEL_CORNER_RADIUS = DialogConstants.PANEL_RADIUS;
+    // Layout constants - use Theme for consistency
+    protected static final double PANEL_PADDING = Theme.PADDING_STANDARD;
+    protected static final double PANEL_SPACING = Theme.PADDING_STANDARD;
+    protected static final double PANEL_CORNER_RADIUS = Theme.PANEL_RADIUS;
 
     // Left column layout (fixed)
     protected static final double LEFT_COLUMN_X = PANEL_PADDING;
@@ -41,9 +44,9 @@ public abstract class BaseScriptDialog {
     protected static final double INFO_PANEL_Y = LEFT_COLUMN_Y + HEADER_PANEL_HEIGHT + PANEL_SPACING;
 
     // Button constants
-    protected static final double BUTTON_WIDTH = DialogConstants.BUTTON_WIDTH;
-    protected static final double BUTTON_HEIGHT = DialogConstants.BUTTON_HEIGHT;
-    protected static final double BUTTON_CORNER_RADIUS = DialogConstants.BUTTON_RADIUS;
+    protected static final double BUTTON_WIDTH = Theme.BUTTON_WIDTH;
+    protected static final double BUTTON_HEIGHT = Theme.BUTTON_HEIGHT;
+    protected static final double BUTTON_CORNER_RADIUS = Theme.BUTTON_RADIUS;
     protected static final double BUTTON_Y_OFFSET = INFO_PANEL_HEIGHT - BUTTON_HEIGHT - PANEL_PADDING;
 
     // Right column layout
@@ -51,10 +54,12 @@ public abstract class BaseScriptDialog {
     protected static final double RIGHT_COLUMN_Y = PANEL_PADDING;
 
     // Website link
-    protected static final String WEBSITE_URL = "https://druscripts.com";
-    protected static final String WEBSITE_DISPLAY = "druscripts.com";
+    protected static final String WEBSITE_LINK_TEXT = "<a href=\"https://druscripts.com\">druscripts.com</a>";
 
     protected final Script script;
+
+    // Hyperlink component for website
+    private Hyperlink websiteLink;
 
     // Mouse state
     protected double mouseX = 0;
@@ -159,16 +164,16 @@ public abstract class BaseScriptDialog {
         timer.start();
 
         StackPane root = new StackPane(canvas);
-        root.setStyle("-fx-background-color: " + DialogConstants.BACKGROUND_DARK + ";");
+        root.setStyle("-fx-background-color: " + Theme.BACKGROUND_DARK + ";");
 
         Scene scene = new Scene(root, canvasWidth, canvasHeight);
-        scene.setFill(Color.web(DialogConstants.BACKGROUND_DARK));
+        scene.setFill(Color.web(Theme.BACKGROUND_DARK));
         return scene;
     }
 
     private void render(GraphicsContext gc) {
         // Clear canvas
-        gc.setFill(Color.web(DialogConstants.BACKGROUND_DARK));
+        gc.setFill(Color.web(Theme.BACKGROUND_DARK));
         gc.fillRect(0, 0, canvasWidth, canvasHeight);
 
         // Left column
@@ -185,24 +190,29 @@ public abstract class BaseScriptDialog {
         // Header panel
         drawPanel(gc, x, y, LEFT_COLUMN_WIDTH, HEADER_PANEL_HEIGHT);
 
-        gc.setFill(Color.web(DialogConstants.BRAND_PRIMARY));
+        gc.setFill(Color.web(Theme.BRAND_PRIMARY));
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         gc.fillText(getScriptTitle(), x + PANEL_PADDING, y + HEADER_TITLE_Y);
 
-        gc.setFill(Color.web(DialogConstants.BRAND_SUBTLE));
+        gc.setFill(Color.web(Theme.BRAND_SUBTLE));
         gc.setFont(Font.font("Arial", 12));
         gc.fillText(getScriptVersion(), x + PANEL_PADDING, y + HEADER_VERSION_Y);
 
-        // Website link (with hover effect)
-        boolean linkHover = isHoveringLink();
-        gc.setFill(linkHover ? Color.web(DialogConstants.BRAND_PRIMARY) : Color.web(DialogConstants.BRAND_TERTIARY));
+        // Website link
         gc.setFont(Font.font("Arial", 10));
-        gc.fillText(WEBSITE_DISPLAY, x + PANEL_PADDING, y + HEADER_AUTHOR_Y);
+        websiteLink = new Hyperlink(
+            x + PANEL_PADDING, y + HEADER_AUTHOR_Y,
+            WEBSITE_LINK_TEXT,
+            LEFT_COLUMN_WIDTH - PANEL_PADDING * 2,
+            Theme.BRAND_TERTIARY,
+            mouseX, mouseY
+        );
+        websiteLink.render(gc);
 
         // Info panel
         drawPanel(gc, x, INFO_PANEL_Y, LEFT_COLUMN_WIDTH, INFO_PANEL_HEIGHT);
 
-        gc.setFill(Color.web(DialogConstants.TEXT_MUTED));
+        gc.setFill(Color.web(Theme.TEXT_MUTED));
         gc.setFont(Font.font("Arial", 11));
         wrapText(gc, getDescription(), x + PANEL_PADDING, INFO_PANEL_Y + 30, BUTTON_WIDTH);
 
@@ -217,7 +227,7 @@ public abstract class BaseScriptDialog {
         drawPanel(gc, RIGHT_COLUMN_X, RIGHT_COLUMN_Y, rightColumnWidth, rightColumnHeight);
 
         // Config header
-        gc.setFill(Color.web(DialogConstants.BRAND_PRIMARY));
+        gc.setFill(Color.web(Theme.BRAND_PRIMARY));
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         gc.fillText("Configuration", RIGHT_COLUMN_X + PANEL_PADDING, RIGHT_COLUMN_Y + 30);
 
@@ -233,8 +243,7 @@ public abstract class BaseScriptDialog {
         double clickY = e.getY();
 
         // Website link
-        if (isHoveringLink()) {
-            openWebsite();
+        if (websiteLink != null && websiteLink.isClicked(clickX, clickY)) {
             return;
         }
 
@@ -257,76 +266,30 @@ public abstract class BaseScriptDialog {
         handleRightColumnClick(clickX, clickY);
     }
 
-    private boolean isHoveringLink() {
-        double linkX = LEFT_COLUMN_X + PANEL_PADDING;
-        double linkY = LEFT_COLUMN_Y + HEADER_AUTHOR_Y - 10;
-        double linkWidth = 80;
-        double linkHeight = 14;
-        return mouseX >= linkX && mouseX <= linkX + linkWidth &&
-               mouseY >= linkY && mouseY <= linkY + linkHeight;
-    }
-
-    private void openWebsite() {
-        try {
-            java.awt.Desktop.getDesktop().browse(new java.net.URI(WEBSITE_URL));
-        } catch (Exception ex) {
-            // Ignore - can't open browser
-        }
-    }
-
-    // === Utility methods for subclasses ===
+    // === Utility methods for subclasses (delegate to CanvasUtils) ===
 
     protected void drawPanel(GraphicsContext gc, double x, double y, double w, double h) {
-        gc.setFill(Color.web(DialogConstants.PANEL_BACKGROUND));
-        gc.fillRoundRect(x, y, w, h, PANEL_CORNER_RADIUS, PANEL_CORNER_RADIUS);
+        CanvasUtils.drawPanel(gc, x, y, w, h, PANEL_CORNER_RADIUS);
     }
 
     protected void drawButton(GraphicsContext gc, double x, double y, double w, double h, String text, boolean hover) {
-        Color baseColor = Color.web(DialogConstants.BUTTON_PRIMARY);
-        Color bgColor = hover ? baseColor.brighter() : baseColor;
-        gc.setFill(bgColor);
-        gc.fillRoundRect(x, y, w, h, BUTTON_CORNER_RADIUS, BUTTON_CORNER_RADIUS);
-
-        gc.setFill(Color.WHITE);
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        double textWidth = getTextWidth(gc, text);
-        gc.fillText(text, x + (w - textWidth) / 2, y + h / 2 + 5);
+        CanvasUtils.drawButton(gc, x, y, w, h, text, hover, Theme.BUTTON_PRIMARY);
     }
 
     protected boolean isHovering(double x, double y, double w, double h) {
-        return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+        return CanvasUtils.isInRect(mouseX, mouseY, x, y, w, h);
     }
 
     protected boolean isInRect(double px, double py, double x, double y, double w, double h) {
-        return px >= x && px <= x + w && py >= y && py <= y + h;
+        return CanvasUtils.isInRect(px, py, x, y, w, h);
     }
 
     protected void wrapText(GraphicsContext gc, String text, double x, double y, double maxWidth) {
-        String[] words = text.split(" ");
-        StringBuilder line = new StringBuilder();
-        double lineY = y;
-
-        for (String word : words) {
-            String testLine = line.length() == 0 ? word : line + " " + word;
-            double testWidth = getTextWidth(gc, testLine);
-
-            if (testWidth > maxWidth && line.length() > 0) {
-                gc.fillText(line.toString(), x, lineY);
-                line = new StringBuilder(word);
-                lineY += 16;
-            } else {
-                line = new StringBuilder(testLine);
-            }
-        }
-        if (line.length() > 0) {
-            gc.fillText(line.toString(), x, lineY);
-        }
+        CanvasUtils.drawWrappedText(gc, text, x, y, maxWidth, 16);
     }
 
     protected double getTextWidth(GraphicsContext gc, String text) {
-        javafx.scene.text.Text tempText = new javafx.scene.text.Text(text);
-        tempText.setFont(gc.getFont());
-        return tempText.getLayoutBounds().getWidth();
+        return CanvasUtils.getTextWidth(gc, text);
     }
 
     /**
