@@ -1,9 +1,9 @@
 package com.druscripts.dyemaker.ui;
 
-import com.druscripts.dyemaker.DyeType;
-import com.druscripts.utils.dialogwindow.BaseScriptDialog;
-import com.druscripts.utils.dialogwindow.DialogConstants;
-import com.druscripts.utils.dialogwindow.components.CanvasRadioButton;
+import com.druscripts.dyemaker.data.DyeType;
+import com.druscripts.utils.dialogwindow.Theme;
+import com.druscripts.utils.dialogwindow.components.RadioButton;
+import com.druscripts.utils.dialogwindow.dialogs.BaseScriptDialog;
 import com.osmb.api.script.Script;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -44,7 +44,7 @@ public class DyeMakerUI extends BaseScriptDialog {
     @Override
     protected void renderRightColumnContent(GraphicsContext gc, double x, double y, double width) {
         // Dye Type Selection label
-        gc.setFill(Color.web(DialogConstants.TEXT_PRIMARY));
+        gc.setFill(Color.web(Theme.TEXT_PRIMARY));
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 13));
         gc.fillText("Select Dye Type:", x, y);
 
@@ -52,7 +52,7 @@ public class DyeMakerUI extends BaseScriptDialog {
 
         // Render radio buttons for each dye type
         for (DyeType dye : DyeType.values()) {
-            new CanvasRadioButton(
+            new RadioButton(
                 x,
                 contentY,
                 dye.getDisplayName(),
@@ -66,7 +66,7 @@ public class DyeMakerUI extends BaseScriptDialog {
         contentY += 15;
 
         // Selected dye info
-        gc.setFill(Color.web(DialogConstants.TEXT_MUTED));
+        gc.setFill(Color.web(Theme.TEXT_MUTED));
         gc.setFont(Font.font("Arial", 11));
         String info = "Requires: " + selectedDyeType.getIngredientCount() + "x " +
                       selectedDyeType.getIngredientName() + " + 5 coins per dye";
@@ -79,7 +79,7 @@ public class DyeMakerUI extends BaseScriptDialog {
         double y = RIGHT_COLUMN_Y + 60 + 30;  // After "Configuration" header and label
 
         for (DyeType dye : DyeType.values()) {
-            CanvasRadioButton radio = new CanvasRadioButton(
+            RadioButton radio = new RadioButton(
                 x,
                 y,
                 dye.getDisplayName(),

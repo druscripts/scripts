@@ -17,14 +17,14 @@ public class CanvasUtils {
      * Draw a rounded panel with the standard background color.
      */
     public static void drawPanel(GraphicsContext gc, double x, double y, double w, double h) {
-        drawPanel(gc, x, y, w, h, DialogConstants.PANEL_RADIUS);
+        drawPanel(gc, x, y, w, h, Theme.PANEL_RADIUS);
     }
 
     /**
      * Draw a rounded panel with custom corner radius.
      */
     public static void drawPanel(GraphicsContext gc, double x, double y, double w, double h, double radius) {
-        gc.setFill(Color.web(DialogConstants.PANEL_BACKGROUND));
+        gc.setFill(Color.web(Theme.PANEL_BACKGROUND));
         gc.fillRoundRect(x, y, w, h, radius, radius);
     }
 
@@ -33,7 +33,7 @@ public class CanvasUtils {
      */
     public static void drawPrimaryButton(GraphicsContext gc, double x, double y, double w, double h,
                                          String text, boolean hover) {
-        drawButton(gc, x, y, w, h, text, hover, DialogConstants.BUTTON_PRIMARY);
+        drawButton(gc, x, y, w, h, text, hover, Theme.BUTTON_PRIMARY);
     }
 
     /**
@@ -41,7 +41,7 @@ public class CanvasUtils {
      */
     public static void drawSecondaryButton(GraphicsContext gc, double x, double y, double w, double h,
                                            String text, boolean hover) {
-        drawButton(gc, x, y, w, h, text, hover, DialogConstants.BUTTON_SECONDARY);
+        drawButton(gc, x, y, w, h, text, hover, Theme.BUTTON_SECONDARY);
     }
 
     /**
@@ -52,7 +52,7 @@ public class CanvasUtils {
         Color baseColor = Color.web(colorHex);
         Color bgColor = hover ? baseColor.brighter() : baseColor;
         gc.setFill(bgColor);
-        gc.fillRoundRect(x, y, w, h, DialogConstants.BUTTON_RADIUS, DialogConstants.BUTTON_RADIUS);
+        gc.fillRoundRect(x, y, w, h, Theme.BUTTON_RADIUS, Theme.BUTTON_RADIUS);
 
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
@@ -114,7 +114,7 @@ public class CanvasUtils {
      * Clear the canvas with the standard dark background.
      */
     public static void clearCanvas(GraphicsContext gc, double width, double height) {
-        gc.setFill(Color.web(DialogConstants.BACKGROUND_DARK));
+        gc.setFill(Color.web(Theme.BACKGROUND_DARK));
         gc.fillRect(0, 0, width, height);
     }
 }

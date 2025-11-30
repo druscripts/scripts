@@ -1,8 +1,10 @@
 package com.druscripts.dyemaker;
 
-import com.druscripts.utils.FreeScript;
-import com.druscripts.utils.PaintStyle;
-import com.druscripts.utils.Task;
+import com.druscripts.utils.script.FreeScript;
+import com.druscripts.utils.paint.PaintStyle;
+import com.druscripts.utils.script.Task;
+import com.druscripts.dyemaker.data.Constants;
+import com.druscripts.dyemaker.data.DyeType;
 import com.druscripts.dyemaker.tasks.*;
 import com.osmb.api.script.ScriptDefinition;
 import com.osmb.api.script.SkillCategory;
@@ -22,17 +24,20 @@ import java.util.Set;
     name = "DyeMaker.druscripts.com",
     description = "Makes dyes at Aggie's shop in Draynor Village.",
     skillCategory = SkillCategory.OTHER,
-    version = 1.0,
+    version = 1.1,
     author = "dru"
 )
 public class DyeMaker extends FreeScript {
 
     // Script state
-    public static DyeType selectedDyeType = null;
-    public static long startTime = System.currentTimeMillis();
-    public static long runStartTime = 0; // Tracks when current run started
-    public static int dyesMade = 0;
-    public static String task = "Starting...";
+    public DyeType selectedDyeType = null;
+    public long startTime = System.currentTimeMillis();
+    public long lapStartTime = System.currentTimeMillis();
+    public int dyesMade = 0;
+    public String task = "Starting...";
+    public boolean firstRoundComplete = false;
+
+    private final Random random = new Random();
 
     public final WalkConfig walkConfig = new WalkConfig.Builder()
         .tileRandomisationRadius(0)
@@ -81,8 +86,8 @@ public class DyeMaker extends FreeScript {
         long elapsed = System.currentTimeMillis() - startTime;
         String runtime = formatRuntime(elapsed);
 
-        double hours = Math.max(1.0E-9, (double) elapsed / 3600000.0);
-        int perHour = (int) Math.round((double) dyesMade / hours);
+        double hours = Math.max(1/3600.0, (double) elapsed / 3600000.0);
+        int perHour = (int) Math.floor((double) dyesMade / hours);
 
         String dyeTypeStr = selectedDyeType != null ? selectedDyeType.getDisplayName() : "Selecting...";
 
@@ -107,8 +112,6 @@ public class DyeMaker extends FreeScript {
     public boolean promptBankTabDialogue() {
         return true;
     }
-
-    // Shared helper methods for tasks
 
     public boolean hasMaterials() {
         if (selectedDyeType == null) return false;
@@ -156,9 +159,8 @@ public class DyeMaker extends FreeScript {
     }
 
     public WorldPosition getRandomBankTile() {
-        Random rand = new Random();
-        int x = Constants.DRAYNOR_BANK_AREA.getX() + rand.nextInt(Constants.DRAYNOR_BANK_AREA.getWidth());
-        int y = Constants.DRAYNOR_BANK_AREA.getY() + rand.nextInt(Constants.DRAYNOR_BANK_AREA.getHeight());
+        int x = Constants.DRAYNOR_BANK_AREA.getX() + random.nextInt(Constants.DRAYNOR_BANK_AREA.getWidth());
+        int y = Constants.DRAYNOR_BANK_AREA.getY() + random.nextInt(Constants.DRAYNOR_BANK_AREA.getHeight());
         return new WorldPosition(x, y, Constants.DRAYNOR_BANK_AREA.getPlane());
     }
 

@@ -1,6 +1,6 @@
-package com.druscripts.utils;
+package com.druscripts.utils.script;
 
-import com.druscripts.utils.StatsClient;
+import com.druscripts.utils.stats.StatsClient;
 import com.osmb.api.script.Script;
 import com.osmb.api.script.ScriptDefinition;
 
@@ -35,7 +35,7 @@ public abstract class FreeScript extends Script {
         }
 
         // Initialize stats client
-        this.statsClient = new StatsClient(getScriptSlug(), this.version, getOSMBUsername());
+        this.statsClient = new StatsClient(getScriptSlug(), this.version);
     }
 
     /**

@@ -1,120 +1,146 @@
 package com.druscripts.dyemaker.tasks;
 
-import com.druscripts.utils.FreeScript;
-import com.druscripts.utils.Task;
-import com.druscripts.dyemaker.Constants;
+import com.druscripts.utils.script.FreeScript;
+import com.druscripts.utils.script.Task;
+import com.druscripts.utils.dialogwindow.dialogs.ErrorDialog;
+import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.DyeMaker;
-import com.druscripts.dyemaker.DyeType;
+import com.druscripts.dyemaker.data.DyeType;
 import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.scene.RSObject;
+import javafx.scene.Scene;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class BankTask extends Task {
 
+    private final DyeMaker dm;
+
     public BankTask(FreeScript script) {
         super(script);
+        dm = (DyeMaker) script;
     }
 
     @Override
     public boolean activate() {
-        DyeMaker dm = (DyeMaker) script;
-        if (!dm.isInBankArea(script.getWorldPosition())) return false;
-        return dm.hasDyes() || !dm.hasMaterials();
+        return dm.isInBankArea(script.getWorldPosition()) && (dm.hasDyes() || !dm.hasMaterials());
     }
 
     @Override
-    public boolean execute() {
-        DyeMaker dm = (DyeMaker) script;
-        DyeType dyeType = DyeMaker.selectedDyeType;
-
-        if (dm.hasDyes() && DyeMaker.runStartTime > 0) {
-            dm.sendStat(Constants.STAT_RUN_COMPLETED, System.currentTimeMillis() - DyeMaker.runStartTime);
-            DyeMaker.runStartTime = 0;
-        }
-
+    public void execute() {
         if (!script.getWidgetManager().getBank().isVisible()) {
-            DyeMaker.task = "Opening bank";
+            dm.task = "Opening bank";
             openBank();
-            return false;
+            return;
         }
 
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(Collections.emptySet());
-        if (inv != null && inv.getFreeSlots() < script.getWidgetManager().getInventory().getGroupSize()) {
-            DyeMaker.task = "Depositing";
+        if (inv != null && inv.getFreeSlots() < Constants.MAX_INVENTORY_SIZE) {
+            dm.task = "Depositing";
             script.getWidgetManager().getBank().depositAll(Collections.emptySet());
             script.pollFramesHuman(() -> {
+                // must re-query to get updated inventory status
                 ItemGroupResult check = script.getWidgetManager().getInventory().search(Collections.emptySet());
-                return check == null || check.getFreeSlots() == script.getWidgetManager().getInventory().getGroupSize();
+                return check == null || check.getFreeSlots() == Constants.MAX_INVENTORY_SIZE;
             }, 3000, true);
         }
 
-        if (!withdrawMaterials(dyeType)) {
-            DyeMaker.task = "Out of materials";
-            showOutOfMaterialsAlert();
-            return false;
+        DyeType dyeType = dm.selectedDyeType;
+
+        int coinsInBank = getBankAmount(Constants.COINS_ID);
+        int ingredientsInBank = getBankAmount(dyeType.getIngredientId());
+
+        if (coinsInBank < Constants.COINS_PER_DYE || ingredientsInBank < dyeType.getIngredientCount()) {
+            dm.task = "Out of materials";
+            showOutOfMaterialsAlertAndStopScript();
+            return;
         }
 
-        DyeMaker.runStartTime = System.currentTimeMillis();
+        dm.task = "Withdrawing";
+        if (!withdrawMaterials(dyeType, coinsInBank, ingredientsInBank)) {
+            return;
+        }
+
         script.getWidgetManager().getBank().close();
-        return false;
     }
 
-    private boolean withdrawMaterials(DyeType dyeType) {
-        DyeMaker.task = "Withdrawing";
+    private int getBankAmount(int itemId) {
+        ItemGroupResult result = script.getWidgetManager().getBank().search(Set.of(itemId));
+        if (result == null || !result.contains(itemId)) return 0;
+        return result.getAmount(new int[]{itemId});
+    }
 
-        ItemGroupResult bankCoins = script.getWidgetManager().getBank().search(Set.of(Constants.COINS_ID));
-        if (bankCoins == null || !bankCoins.contains(Constants.COINS_ID)) return false;
-        int coinsInBank = bankCoins.getAmount(new int[]{Constants.COINS_ID});
-
-        ItemGroupResult bankIngredients = script.getWidgetManager().getBank().search(Set.of(dyeType.getIngredientId()));
-        if (bankIngredients == null || !bankIngredients.contains(dyeType.getIngredientId())) return false;
-        int ingredientsInBank = bankIngredients.getAmount(new int[]{dyeType.getIngredientId()});
-
-        int maxBatches = dyeType.isStackable() ? 28 : 27 / dyeType.getIngredientCount();
+    /**
+     * Attempt to withdraw materials from bank.
+     * Returns true if successful, false if failed (will retry next poll).
+     */
+    private boolean withdrawMaterials(DyeType dyeType, int coinsInBank, int ingredientsInBank) {
+        // For stackable ingredients, full inventory available. For non-stackable,
+        // one slot is reserved for coins so we subtract 1.
+        int maxBatches = dyeType.isStackable()
+            ? Constants.MAX_INVENTORY_SIZE
+            : (Constants.MAX_INVENTORY_SIZE - 1) / dyeType.getIngredientCount();
         int batches = Math.min(coinsInBank / Constants.COINS_PER_DYE, ingredientsInBank / dyeType.getIngredientCount());
         batches = Math.min(batches, maxBatches);
-        if (batches <= 0) return false;
 
-        int coins = batches * Constants.COINS_PER_DYE;
-        if (!script.getWidgetManager().getBank().withdraw(Constants.COINS_ID, coins)) return false;
-        script.pollFramesHuman(() -> {
-            ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(Constants.COINS_ID));
-            return inv != null && inv.contains(Constants.COINS_ID);
-        }, 3000, true);
+        // Withdraw coins if not already in inventory
+        ItemGroupResult invCoins = script.getWidgetManager().getInventory().search(Set.of(Constants.COINS_ID));
+        if (invCoins == null || !invCoins.contains(Constants.COINS_ID)) {
+            int coins = batches * Constants.COINS_PER_DYE;
+            if (!script.getWidgetManager().getBank().withdraw(Constants.COINS_ID, coins)) {
+                return false;
+            }
+            boolean coinsAppeared = script.pollFramesHuman(() -> {
+                ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(Constants.COINS_ID));
+                return inv != null && inv.contains(Constants.COINS_ID);
+            }, 3000, true);
+            if (!coinsAppeared) {
+                return false;
+            }
+        }
 
-        int ingredients = batches * dyeType.getIngredientCount();
-        return script.getWidgetManager().getBank().withdraw(dyeType.getIngredientId(), ingredients);
+        // Withdraw ingredients if not already in inventory
+        ItemGroupResult invIngredients = script.getWidgetManager().getInventory().search(Set.of(dyeType.getIngredientId()));
+        if (invIngredients == null || !invIngredients.contains(dyeType.getIngredientId())) {
+            int ingredients = batches * dyeType.getIngredientCount();
+            if (!script.getWidgetManager().getBank().withdraw(dyeType.getIngredientId(), ingredients)) {
+                return false;
+            }
+            boolean ingredientsAppeared = script.pollFramesHuman(() -> {
+                ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(dyeType.getIngredientId()));
+                return inv != null && inv.contains(dyeType.getIngredientId());
+            }, 3000, true);
+            if (!ingredientsAppeared) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void openBank() {
-        List<RSObject> banks = script.getObjectManager().getObjects(obj -> {
-            if (obj.getName() == null || obj.getActions() == null) return false;
-            if (Arrays.stream(Constants.BANK_NAMES).noneMatch(n -> n.equalsIgnoreCase(obj.getName()))) return false;
-            return Arrays.stream(obj.getActions()).anyMatch(a ->
-                Arrays.stream(Constants.BANK_ACTIONS).anyMatch(ba -> ba.equalsIgnoreCase((String) a))
-            ) && obj.canReach();
-        });
+        List<RSObject> banks = script.getObjectManager().getObjects(obj ->
+            Constants.BANK_NAME.equalsIgnoreCase(obj.getName()) && obj.canReach()
+        );
         if (banks.isEmpty()) return;
 
         RSObject bank = (RSObject) script.getUtils().getClosest(banks);
-        if (!bank.interact(Constants.BANK_ACTIONS)) return;
+        if (!bank.interact(Constants.BANK_ACTION)) return;
 
         double dist = bank.distance(script.getWorldPosition());
         script.pollFramesHuman(() -> script.getWidgetManager().getBank().isVisible(), (int)(dist * 1200 + 600), true);
     }
 
-    private void showOutOfMaterialsAlert() {
-        javafx.application.Platform.runLater(() -> {
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
-            alert.setTitle("Script Complete");
-            alert.setHeaderText("Out of Materials");
-            alert.setContentText("Total dyes made: " + DyeMaker.dyesMade);
-            alert.showAndWait();
-        });
-        script.stop();
+    private void showOutOfMaterialsAlertAndStopScript() {
+        String message = "Total dyes made: " + dm.dyesMade;
+        Scene errorScene = ErrorDialog.createErrorScene(
+            "DyeMaker",
+            "Out of Materials",
+            message,
+            script::stop
+        );
+        script.getStageController().show(errorScene, "Script Complete", false);
     }
 }

@@ -1,4 +1,4 @@
-package com.druscripts.dyemaker;
+package com.druscripts.dyemaker.data;
 
 import com.osmb.api.location.area.impl.RectangleArea;
 import com.osmb.api.location.position.types.WorldPosition;
@@ -29,10 +29,8 @@ public final class Constants {
 
     public static final int COINS_ID = 995;
     public static final int COINS_PER_DYE = 5;
+    public static final int MAX_INVENTORY_SIZE = 28;
 
-    public static final String[] BANK_NAMES = {"Bank booth"};
-    public static final String[] BANK_ACTIONS = {"bank"};
-
-    public static final String STAT_DYE_MADE = "dye_made";
-    public static final String STAT_RUN_COMPLETED = "run_completed";
+    public static final String BANK_NAME = "Bank booth";
+    public static final String BANK_ACTION = "bank";
 }

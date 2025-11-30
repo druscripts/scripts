@@ -1,6 +1,7 @@
 package com.druscripts.dyemaker;
 
-import com.druscripts.utils.FreeScript;
+import com.druscripts.dyemaker.data.Constants;
+import com.druscripts.utils.script.FreeScript;
 import com.osmb.api.input.MenuEntry;
 import com.osmb.api.scene.RSObject;
 import com.osmb.api.scene.RSTile;

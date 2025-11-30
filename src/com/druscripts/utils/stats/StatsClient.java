@@ -1,4 +1,4 @@
-package com.druscripts.utils;
+package com.druscripts.utils.stats;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -19,7 +19,6 @@ public class StatsClient {
 
     private final String scriptSlug;
     private final String version;
-    private final String username;
     private final String sessionId;
     private final Consumer<String> logger;
 
@@ -28,13 +27,11 @@ public class StatsClient {
      *
      * @param scriptSlug Script identifier (e.g., "roguesden", "dyemaker")
      * @param version    Script version (e.g., "0.1")
-     * @param username   OSMB username
      * @param logger     Optional logger for debug messages (can be null)
      */
-    public StatsClient(String scriptSlug, String version, String username, Consumer<String> logger) {
+    public StatsClient(String scriptSlug, String version, Consumer<String> logger) {
         this.scriptSlug = scriptSlug;
         this.version = version;
-        this.username = username;
         this.sessionId = UUID.randomUUID().toString().substring(0, 8);
         this.logger = logger;
     }
@@ -42,8 +39,8 @@ public class StatsClient {
     /**
      * Create a new stats client without logging.
      */
-    public StatsClient(String scriptSlug, String version, String username) {
-        this(scriptSlug, version, username, null);
+    public StatsClient(String scriptSlug, String version) {
+        this(scriptSlug, version, null);
     }
 
     /**
@@ -66,10 +63,9 @@ public class StatsClient {
     private void sendStatImpl(String statName, Object value) {
         try {
             String jsonPayload = String.format(
-                "{\"script\":\"%s\",\"version\":\"%s\",\"user\":\"%s\",\"stat\":\"%s\",\"value\":%s,\"sessionId\":\"%s\"}",
+                "{\"script\":\"%s\",\"version\":\"%s\",\"stat\":\"%s\",\"value\":%s,\"sessionId\":\"%s\"}",
                 escapeJson(scriptSlug),
                 escapeJson(version),
-                escapeJson(username),
                 escapeJson(statName),
                 value,
                 sessionId

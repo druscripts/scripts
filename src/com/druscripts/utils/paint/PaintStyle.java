@@ -1,4 +1,4 @@
-package com.druscripts.utils;
+package com.druscripts.utils.paint;
 
 import com.osmb.api.visual.drawing.Canvas;
 

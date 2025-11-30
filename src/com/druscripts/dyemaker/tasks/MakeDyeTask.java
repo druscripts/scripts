@@ -1,10 +1,9 @@
 package com.druscripts.dyemaker.tasks;
 
-import com.druscripts.utils.FreeScript;
-import com.druscripts.utils.Task;
-import com.druscripts.dyemaker.Constants;
+import com.druscripts.utils.script.FreeScript;
+import com.druscripts.utils.script.Task;
 import com.druscripts.dyemaker.DyeMaker;
-import com.druscripts.dyemaker.DyeType;
+import com.druscripts.dyemaker.data.DyeType;
 import com.osmb.api.input.MenuEntry;
 import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.item.ItemSearchResult;
@@ -19,39 +18,40 @@ import java.util.Set;
 
 public class MakeDyeTask extends Task {
 
+    private final DyeMaker dm;
+
     public MakeDyeTask(FreeScript script) {
         super(script);
+        dm = (DyeMaker) script;
     }
 
     @Override
     public boolean activate() {
-        DyeMaker dm = (DyeMaker) script;
         WorldPosition pos = script.getWorldPosition();
         return pos != null && dm.isInAggieShop(pos) && dm.hasMaterials();
     }
 
     @Override
-    public boolean execute() {
-        DyeMaker dm = (DyeMaker) script;
-        DyeMaker.task = "Making dye";
-        DyeType dyeType = DyeMaker.selectedDyeType;
+    public void execute() {
+        dm.task = "Making dye";
+        DyeType dyeType = dm.selectedDyeType;
 
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(
             Set.of(dyeType.getIngredientId(), dyeType.getDyeId())
         );
-        if (inv == null) return false;
+        if (inv == null) return;
 
         int dyesBefore = inv.contains(dyeType.getDyeId()) ? inv.getAmount(new int[]{dyeType.getDyeId()}) : 0;
 
-        if (!selectIngredient(dyeType)) return false;
-        if (!clickOnAggie()) return false;
+        if (!selectIngredient(dyeType)) return;
+        if (!clickOnAggie()) return;
 
         boolean dialogueAppeared = script.pollFramesHuman(() ->
             script.getWidgetManager().getDialogue().getDialogueType() == DialogueType.ITEM_OPTION, 3000, true);
-        if (!dialogueAppeared) return false;
+        if (!dialogueAppeared) return;
 
         boolean selected = script.getWidgetManager().getDialogue().selectItem(dyeType.getDyeId());
-        if (!selected) return false;
+        if (!selected) return;
 
         ItemGroupResult[] lastInv = {null};
         boolean success = script.pollFramesHuman(() -> {
@@ -62,12 +62,17 @@ public class MakeDyeTask extends Task {
         if (success) {
             int made = lastInv[0].getAmount(new int[]{dyeType.getDyeId()}) - dyesBefore;
             if (made > 0) {
-                DyeMaker.dyesMade += made;
-                dm.sendStat(Constants.STAT_DYE_MADE, made);
+                dm.dyesMade += made;
+                // Skip stats on first round (script may have started mid-run)
+                if (dm.firstRoundComplete) {
+                    long lapTimeMs = System.currentTimeMillis() - dm.lapStartTime;
+                    dm.sendStat(dyeType.getStatName(), made);
+                    dm.sendStat(dyeType.getLapTimeStatName(), lapTimeMs);
+                }
+                dm.firstRoundComplete = true;
+                dm.lapStartTime = System.currentTimeMillis();
             }
         }
-
-        return false;
     }
 
     private boolean selectIngredient(DyeType dyeType) {
@@ -102,7 +107,6 @@ public class MakeDyeTask extends Task {
     }
 
     private boolean clickOnAggie() {
-        DyeMaker dm = (DyeMaker) script;
         UIResultList<WorldPosition> npcPositions = script.getWidgetManager().getMinimap().getNPCPositions();
         if (npcPositions == null || npcPositions.isEmpty()) return false;
 
