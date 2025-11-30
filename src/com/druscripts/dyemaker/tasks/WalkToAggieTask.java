@@ -9,16 +9,17 @@ import com.osmb.api.location.position.types.WorldPosition;
 
 public class WalkToAggieTask extends Task {
 
+    private final DyeMaker dm;
     private final DoorHelper doorHelper;
 
     public WalkToAggieTask(FreeScript script) {
         super(script);
+        dm = (DyeMaker) script;
         this.doorHelper = new DoorHelper(script);
     }
 
     @Override
     public boolean activate() {
-        DyeMaker dm = (DyeMaker) script;
         if (!dm.hasMaterials()) return false;
         WorldPosition pos = script.getWorldPosition();
         return pos != null && !dm.isInAggieShop(pos);
@@ -26,8 +27,7 @@ public class WalkToAggieTask extends Task {
 
     @Override
     public boolean execute() {
-        DyeMaker dm = (DyeMaker) script;
-        DyeMaker.task = "Walking to Aggie";
+        dm.task = "Walking to Aggie";
 
         if (script.getWidgetManager().getBank().isVisible()) {
             script.getWidgetManager().getBank().close();

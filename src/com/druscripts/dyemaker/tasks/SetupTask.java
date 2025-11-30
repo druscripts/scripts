@@ -8,10 +8,12 @@ import javafx.scene.Scene;
 
 public class SetupTask extends Task {
 
+    private final DyeMaker dm;
     private boolean setupComplete = false;
 
     public SetupTask(FreeScript script) {
         super(script);
+        dm = (DyeMaker) script;
     }
 
     @Override
@@ -21,22 +23,22 @@ public class SetupTask extends Task {
 
     @Override
     public boolean execute() {
-        DyeMaker.task = "Setup";
+        dm.task = "Setup";
 
         DyeMakerUI ui = new DyeMakerUI(script);
         Scene scene = ui.buildScene();
         script.getStageController().show(scene, "DyeMaker Configuration", false);
 
-        DyeMaker.selectedDyeType = ui.getSelectedDyeType();
+        dm.selectedDyeType = ui.getSelectedDyeType();
 
-        if (DyeMaker.selectedDyeType == null) {
+        if (dm.selectedDyeType == null) {
             script.stop();
             setupComplete = true;
             return false;
         }
 
-        script.log(getClass(), "Selected: " + DyeMaker.selectedDyeType.getDisplayName());
-        DyeMaker.task = "Starting...";
+        script.log(getClass(), "Selected: " + dm.selectedDyeType.getDisplayName());
+        dm.task = "Starting...";
         setupComplete = true;
         return true;
     }

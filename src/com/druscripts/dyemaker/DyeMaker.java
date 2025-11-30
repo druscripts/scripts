@@ -28,12 +28,14 @@ import java.util.Set;
 public class DyeMaker extends FreeScript {
 
     // Script state
-    public static DyeType selectedDyeType = null;
-    public static long startTime = System.currentTimeMillis();
-    public static long lapStartTime = System.currentTimeMillis();
-    public static int dyesMade = 0;
-    public static String task = "Starting...";
-    public static boolean firstRoundComplete = false;
+    public DyeType selectedDyeType = null;
+    public long startTime = System.currentTimeMillis();
+    public long lapStartTime = System.currentTimeMillis();
+    public int dyesMade = 0;
+    public String task = "Starting...";
+    public boolean firstRoundComplete = false;
+
+    private final Random random = new Random();
 
     public final WalkConfig walkConfig = new WalkConfig.Builder()
         .tileRandomisationRadius(0)
@@ -157,9 +159,8 @@ public class DyeMaker extends FreeScript {
     }
 
     public WorldPosition getRandomBankTile() {
-        Random rand = new Random();
-        int x = Constants.DRAYNOR_BANK_AREA.getX() + rand.nextInt(Constants.DRAYNOR_BANK_AREA.getWidth());
-        int y = Constants.DRAYNOR_BANK_AREA.getY() + rand.nextInt(Constants.DRAYNOR_BANK_AREA.getHeight());
+        int x = Constants.DRAYNOR_BANK_AREA.getX() + random.nextInt(Constants.DRAYNOR_BANK_AREA.getWidth());
+        int y = Constants.DRAYNOR_BANK_AREA.getY() + random.nextInt(Constants.DRAYNOR_BANK_AREA.getHeight());
         return new WorldPosition(x, y, Constants.DRAYNOR_BANK_AREA.getPlane());
     }
 

@@ -2,7 +2,6 @@ package com.druscripts.dyemaker.tasks;
 
 import com.druscripts.utils.FreeScript;
 import com.druscripts.utils.Task;
-import com.druscripts.dyemaker.Constants;
 import com.druscripts.dyemaker.DyeMaker;
 import com.druscripts.dyemaker.DyeType;
 import com.osmb.api.input.MenuEntry;
@@ -19,22 +18,23 @@ import java.util.Set;
 
 public class MakeDyeTask extends Task {
 
+    private final DyeMaker dm;
+
     public MakeDyeTask(FreeScript script) {
         super(script);
+        dm = (DyeMaker) script;
     }
 
     @Override
     public boolean activate() {
-        DyeMaker dm = (DyeMaker) script;
         WorldPosition pos = script.getWorldPosition();
         return pos != null && dm.isInAggieShop(pos) && dm.hasMaterials();
     }
 
     @Override
     public boolean execute() {
-        DyeMaker dm = (DyeMaker) script;
-        DyeMaker.task = "Making dye";
-        DyeType dyeType = DyeMaker.selectedDyeType;
+        dm.task = "Making dye";
+        DyeType dyeType = dm.selectedDyeType;
 
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(
             Set.of(dyeType.getIngredientId(), dyeType.getDyeId())
@@ -62,15 +62,15 @@ public class MakeDyeTask extends Task {
         if (success) {
             int made = lastInv[0].getAmount(new int[]{dyeType.getDyeId()}) - dyesBefore;
             if (made > 0) {
-                DyeMaker.dyesMade += made;
+                dm.dyesMade += made;
                 // Skip stats on first round (script may have started mid-run)
-                if (DyeMaker.firstRoundComplete) {
-                    long lapTimeMs = System.currentTimeMillis() - DyeMaker.lapStartTime;
+                if (dm.firstRoundComplete) {
+                    long lapTimeMs = System.currentTimeMillis() - dm.lapStartTime;
                     dm.sendStat(dyeType.getStatName(), made);
                     dm.sendStat(dyeType.getLapTimeStatName(), lapTimeMs);
                 }
-                DyeMaker.firstRoundComplete = true;
-                DyeMaker.lapStartTime = System.currentTimeMillis();
+                dm.firstRoundComplete = true;
+                dm.lapStartTime = System.currentTimeMillis();
             }
         }
 
@@ -109,7 +109,6 @@ public class MakeDyeTask extends Task {
     }
 
     private boolean clickOnAggie() {
-        DyeMaker dm = (DyeMaker) script;
         UIResultList<WorldPosition> npcPositions = script.getWidgetManager().getMinimap().getNPCPositions();
         if (npcPositions == null || npcPositions.isEmpty()) return false;
 

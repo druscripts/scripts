@@ -29,14 +29,8 @@ public final class Constants {
 
     public static final int COINS_ID = 995;
     public static final int COINS_PER_DYE = 5;
+    public static final int MAX_INVENTORY_SIZE = 28;
 
-    public static final String[] BANK_NAMES = {"Bank booth"};
-    public static final String[] BANK_ACTIONS = {"bank"};
-
-    public static final String STAT_RED_DYE_MADE = "red_dye_made";
-    public static final String STAT_YELLOW_DYE_MADE = "yellow_dye_made";
-    public static final String STAT_BLUE_DYE_MADE = "blue_dye_made";
-    public static final String STAT_RED_LAP_TIME = "red_lap_time";
-    public static final String STAT_YELLOW_LAP_TIME = "yellow_lap_time";
-    public static final String STAT_BLUE_LAP_TIME = "blue_lap_time";
+    public static final String BANK_NAME = "Bank booth";
+    public static final String BANK_ACTION = "bank";
 }

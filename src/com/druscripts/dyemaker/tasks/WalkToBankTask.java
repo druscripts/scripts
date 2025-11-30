@@ -9,17 +9,18 @@ import com.osmb.api.location.position.types.WorldPosition;
 
 public class WalkToBankTask extends Task {
 
+    private final DyeMaker dm;
     private final DoorHelper doorHelper;
 
     public WalkToBankTask(FreeScript script) {
         super(script);
+        dm = (DyeMaker) script;
         this.doorHelper = new DoorHelper(script);
     }
 
     @Override
     public boolean activate() {
-        DyeMaker dm = (DyeMaker) script;
-        if (DyeMaker.selectedDyeType == null) return false;
+        if (dm.selectedDyeType == null) return false;
         WorldPosition pos = script.getWorldPosition();
         if (pos == null || dm.isInBankArea(pos)) return false;
         return dm.hasDyes() || !dm.hasMaterials();
@@ -27,8 +28,7 @@ public class WalkToBankTask extends Task {
 
     @Override
     public boolean execute() {
-        DyeMaker dm = (DyeMaker) script;
-        DyeMaker.task = "Walking to bank";
+        dm.task = "Walking to bank";
 
         script.getWidgetManager().getInventory().unSelectItemIfSelected();
 
