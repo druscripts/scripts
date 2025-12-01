@@ -25,19 +25,19 @@ public class SetupTask extends Task {
     public void execute() {
         dm.task = "Setup";
 
-        DyeMakerUI ui = new DyeMakerUI(script);
+        DyeMakerUI ui = new DyeMakerUI(dm);
         Scene scene = ui.buildScene();
-        script.getStageController().show(scene, "DyeMaker Configuration", false);
+        dm.getStageController().show(scene, "DyeMaker Configuration", false);
 
         dm.selectedDyeType = ui.getSelectedDyeType();
 
         if (dm.selectedDyeType == null) {
-            script.stop();
+            dm.stop();
             setupComplete = true;
             return;
         }
 
-        script.log(getClass(), "Selected: " + dm.selectedDyeType.getDisplayName());
+        dm.log(getClass(), "Selected: " + dm.selectedDyeType.getDisplayName());
         dm.task = "Starting...";
         setupComplete = true;
     }

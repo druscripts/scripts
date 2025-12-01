@@ -1,10 +1,10 @@
 package com.druscripts.dyemaker.ui;
 
+import com.druscripts.dyemaker.DyeMaker;
 import com.druscripts.dyemaker.data.DyeType;
 import com.druscripts.utils.dialogwindow.Theme;
 import com.druscripts.utils.dialogwindow.components.RadioButton;
 import com.druscripts.utils.dialogwindow.dialogs.BaseScriptDialog;
-import com.osmb.api.script.Script;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -17,28 +17,19 @@ public class DyeMakerUI extends BaseScriptDialog {
 
     private static final double RIGHT_COL_WIDTH = 280;
     private static final double RIGHT_COL_HEIGHT = 368;
+    private static final String DESCRIPTION = "Makes dyes at Aggie's shop in Draynor Village. " +
+            "Start near Draynor bank or Aggie's house with coins and ingredients in your bank.";
 
     private DyeType selectedDyeType = DyeType.RED;
 
-    public DyeMakerUI(Script script) {
-        super(script, RIGHT_COL_WIDTH, RIGHT_COL_HEIGHT);
+    public DyeMakerUI(DyeMaker script) {
+        super(script, script.getTitle(), script.getVersion(), RIGHT_COL_WIDTH, RIGHT_COL_HEIGHT);
         loadPreferences();
     }
 
     @Override
-    protected String getScriptTitle() {
-        return "DyeMaker";
-    }
-
-    @Override
-    protected String getScriptVersion() {
-        return "v1.0";
-    }
-
-    @Override
     protected String getDescription() {
-        return "Makes dyes at Aggie's shop in Draynor Village. " +
-               "Start near Draynor bank or Aggie's house with coins and ingredients in your bank.";
+        return DESCRIPTION;
     }
 
     @Override

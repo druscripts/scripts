@@ -15,13 +15,14 @@ public class WalkToAggieTask extends Task {
     public WalkToAggieTask(FreeScript script) {
         super(script);
         dm = (DyeMaker) script;
-        this.doorHelper = new DoorHelper(script);
+        this.doorHelper = new DoorHelper(dm);
     }
 
     @Override
     public boolean activate() {
         if (!dm.hasMaterials()) return false;
-        WorldPosition pos = script.getWorldPosition();
+
+        WorldPosition pos = dm.getWorldPosition();
         return pos != null && !dm.isInAggieShop(pos);
     }
 
@@ -29,19 +30,19 @@ public class WalkToAggieTask extends Task {
     public void execute() {
         dm.task = "Walking to Aggie";
 
-        if (script.getWidgetManager().getBank().isVisible()) {
-            script.getWidgetManager().getBank().close();
-            script.pollFramesHuman(() -> !script.getWidgetManager().getBank().isVisible(), 2000, true);
+        if (dm.getWidgetManager().getBank().isVisible()) {
+            dm.getWidgetManager().getBank().close();
+            dm.pollFramesHuman(() -> !dm.getWidgetManager().getBank().isVisible(), 2000);
         }
 
-        script.getWidgetManager().getInventory().unSelectItemIfSelected();
+        dm.getWidgetManager().getInventory().unSelectItemIfSelected();
 
-        WorldPosition pos = script.getWorldPosition();
+        WorldPosition pos = dm.getWorldPosition();
         if (pos == null) return;
 
         if (!dm.isAtPosition(pos, Constants.AGGIE_SHOP_OUTSIDE)) {
-            script.getWalker().walkTo(Constants.AGGIE_SHOP_OUTSIDE, dm.walkConfig);
-            script.pollFramesHuman(() -> dm.isAtPosition(script.getWorldPosition(), Constants.AGGIE_SHOP_OUTSIDE), 15000, true);
+            dm.getWalker().walkTo(Constants.AGGIE_SHOP_OUTSIDE, dm.walkConfig);
+            dm.pollFramesHuman(() -> dm.isAtPosition(dm.getWorldPosition(), Constants.AGGIE_SHOP_OUTSIDE), 15000, true);
         }
 
         if (!doorHelper.openDoor()) return;

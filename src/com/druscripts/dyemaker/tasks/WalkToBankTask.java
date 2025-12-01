@@ -15,14 +15,16 @@ public class WalkToBankTask extends Task {
     public WalkToBankTask(FreeScript script) {
         super(script);
         dm = (DyeMaker) script;
-        this.doorHelper = new DoorHelper(script);
+        this.doorHelper = new DoorHelper(dm);
     }
 
     @Override
     public boolean activate() {
         if (dm.selectedDyeType == null) return false;
-        WorldPosition pos = script.getWorldPosition();
+
+        WorldPosition pos = dm.getWorldPosition();
         if (pos == null || dm.isInBankArea(pos)) return false;
+
         return dm.hasDyes() || !dm.hasMaterials();
     }
 
@@ -30,9 +32,9 @@ public class WalkToBankTask extends Task {
     public void execute() {
         dm.task = "Walking to bank";
 
-        script.getWidgetManager().getInventory().unSelectItemIfSelected();
+        dm.getWidgetManager().getInventory().unSelectItemIfSelected();
 
-        WorldPosition pos = script.getWorldPosition();
+        WorldPosition pos = dm.getWorldPosition();
         if (pos == null) return;
 
         if (dm.isInAggieShop(pos)) {
@@ -43,7 +45,7 @@ public class WalkToBankTask extends Task {
             if (!dm.walkToTile(Constants.AGGIE_SHOP_OUTSIDE)) return;
         }
 
-        script.getWalker().walkTo(dm.getRandomBankTile(), dm.walkConfig);
-        script.pollFramesHuman(() -> dm.isInBankArea(script.getWorldPosition()), 15000, true);
+        dm.getWalker().walkTo(dm.getRandomBankTile(), dm.walkConfig);
+        dm.pollFramesHuman(() -> dm.isInBankArea(dm.getWorldPosition()), 15000, true);
     }
 }
