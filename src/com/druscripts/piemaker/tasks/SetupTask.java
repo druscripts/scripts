@@ -31,36 +31,10 @@ public class SetupTask extends Task {
 
         pieMaker.log(getClass(), "Starting setup...");
 
-        WorldPosition playerPos = pieMaker.getWorldPosition();
-        if (playerPos == null) {
-            Scene errorScene = ErrorDialog.createErrorScene(
-                "Position Error",
-                "Could not detect your location. Please try restarting the script.",
-                pieMaker::stop
-            );
-            pieMaker.getStageController().show(errorScene, "Error", false);
-            return;
-        }
-
-        int playerRegion = playerPos.getRegionID();
-        boolean isLumbridge = playerRegion == Constants.LUMBRIDGE_REGION;
-        boolean isGE = playerRegion == Constants.GRAND_EXCHANGE_REGION;
-
-        if (!isLumbridge && !isGE) {
-            Scene errorScene = ErrorDialog.createErrorScene(
-                "Invalid Location",
-                "You must start at either Lumbridge Castle or Grand Exchange bank.\n\nCurrent region: " + playerRegion,
-                () -> pieMaker.stop()
-            );
-            pieMaker.getStageController().show(errorScene, "Error", false);
-            return;
-        }
-
-        pieMaker.detectedRegion = playerRegion;
-        pieMaker.log(getClass(), "Location: " + (isLumbridge ? "Lumbridge" : "Grand Exchange"));
+        locationCheck();
 
         pieMaker.log(getClass(), "Showing configuration UI...");
-        PieMakerUI ui = new PieMakerUI(pieMaker, isLumbridge);
+        PieMakerUI ui = new PieMakerUI(pieMaker);
         Scene scene = ui.buildScene();
         pieMaker.getStageController().show(scene, "PieMaker Configuration", false);
 
@@ -82,5 +56,33 @@ public class SetupTask extends Task {
 
         pieMaker.initializeProductionTasks();
         setupComplete = true;
+    }
+
+    void locationCheck() {
+        WorldPosition playerPos = pieMaker.getWorldPosition();
+        if (playerPos == null) {
+            Scene errorScene = ErrorDialog.createErrorScene(
+                "Position Error",
+                "Could not detect your location. Please try restarting the script.",
+                pieMaker::stop
+            );
+            pieMaker.getStageController().show(errorScene, "Error", false);
+        }
+
+        int playerRegion = playerPos.getRegionID();
+        boolean isLumbridge = playerRegion == Constants.LUMBRIDGE_REGION;
+        boolean isGE = playerRegion == Constants.GRAND_EXCHANGE_REGION;
+
+        if (!isLumbridge && !isGE) {
+            Scene errorScene = ErrorDialog.createErrorScene(
+                "Invalid Location",
+                "You must start at either Lumbridge Castle or Grand Exchange bank.\n\nCurrent region: " + playerRegion,
+                pieMaker::stop
+            );
+            pieMaker.getStageController().show(errorScene, "Error", false);
+        }
+
+        pieMaker.detectedRegion = playerRegion;
+        pieMaker.log(getClass(), "Location: " + (isLumbridge ? "Lumbridge" : "Grand Exchange"));
     }
 }

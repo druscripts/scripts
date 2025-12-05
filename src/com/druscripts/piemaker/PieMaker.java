@@ -5,15 +5,11 @@ import com.druscripts.piemaker.data.PieType;
 import com.druscripts.piemaker.data.Stage;
 import com.druscripts.piemaker.tasks.*;
 import com.druscripts.piemaker.tasks.processing.*;
-import com.druscripts.utils.script.Task;
 import com.druscripts.utils.paint.PaintStyle;
 import com.druscripts.utils.script.FreeScript;
 
 import com.osmb.api.script.ScriptDefinition;
 import com.osmb.api.script.SkillCategory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @ScriptDefinition(
     name = "PieMaker.druscripts.com",
@@ -42,8 +38,6 @@ public class PieMaker extends FreeScript {
     public int bankIngredients = 0;
     public int bankUncookedPies = 0;
 
-    private List<Task> tasks;
-
     public PieMaker(Object scriptCore) {
         super(scriptCore);
     }
@@ -59,23 +53,7 @@ public class PieMaker extends FreeScript {
         log(getClass().getSimpleName(), "Starting PieMaker v" + getVersion());
 
         startTime = System.currentTimeMillis();
-
-        tasks = new ArrayList<>();
         tasks.add(new SetupTask(this));
-        tasks.add(new BankTask(this));
-    }
-
-    @Override
-    public int poll() {
-        if (tasks != null) {
-            for (Task t : tasks) {
-                if (t.activate()) {
-                    t.execute();
-                    return 0;
-                }
-            }
-        }
-        return 0;
     }
 
     @Override

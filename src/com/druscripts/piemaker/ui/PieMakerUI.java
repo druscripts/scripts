@@ -30,9 +30,9 @@ public class PieMakerUI extends BaseScriptDialog {
     private int waterSourceId = Constants.JUG_OF_WATER;
     private PieType pieType = PieType.REDBERRY;
 
-    public PieMakerUI(PieMaker script, boolean canCook) {
+    public PieMakerUI(PieMaker script) {
         super(script, script.getTitle(), script.getVersion(), RIGHT_COL_WIDTH, RIGHT_COL_HEIGHT);
-        this.canCook = canCook;
+        this.canCook = script.isLumbridge();
         loadPreferences();
     }
 

@@ -4,6 +4,8 @@ import com.druscripts.piemaker.PieMaker;
 import com.druscripts.piemaker.data.Constants;
 import com.druscripts.piemaker.data.Stage;
 import com.druscripts.utils.script.Task;
+import com.druscripts.utils.widget.InventoryUtils;
+import com.druscripts.utils.widget.exception.CannotOpenWidgetException;
 import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.scene.RSObject;
 import javafx.application.Platform;
@@ -40,34 +42,35 @@ public class BankTask extends Task {
     }
 
     private boolean needsToBank() {
-        switch (pieMaker.stage) {
-            case MAKE_DOUGH:
-                return checkNeedsBank(Constants.FLOUR, pieMaker.waterSourceId, Constants.PASTRY_DOUGH);
-            case MAKE_SHELL:
-                return checkNeedsBank(Constants.PIE_DISH, Constants.PASTRY_DOUGH, Constants.PIE_SHELL);
-            case MAKE_UNCOOKED:
-                return checkNeedsBank(Constants.PIE_SHELL, pieMaker.pieType.getIngredientId(), pieMaker.pieType.getUncookedId());
-            case COOK:
-                return checkNeedsBankForCooking();
-            default:
-                return false;
+        try {
+            switch (pieMaker.stage) {
+                case MAKE_DOUGH:
+                    return checkNeedsBank(Constants.FLOUR, pieMaker.waterSourceId, Constants.PASTRY_DOUGH);
+                case MAKE_SHELL:
+                    return checkNeedsBank(Constants.PIE_DISH, Constants.PASTRY_DOUGH, Constants.PIE_SHELL);
+                case MAKE_UNCOOKED:
+                    return checkNeedsBank(Constants.PIE_SHELL, pieMaker.pieType.getIngredientId(), pieMaker.pieType.getUncookedId());
+                case COOK:
+                    return checkNeedsBankForCooking();
+                default:
+                    return false;
+            }
+        } catch (CannotOpenWidgetException e) {
+            script.log(getClass(), e.getMessage());
+            return false;
         }
     }
 
-    private boolean checkNeedsBankForCooking() {
-        int uncookedId = pieMaker.pieType.getUncookedId();
-        int cookedId = pieMaker.pieType.getCookedId();
-        ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(uncookedId, cookedId));
-        if (inv == null) return true;
-        if (inv.contains(cookedId)) return true;
-        return !inv.contains(uncookedId);
+    private boolean checkNeedsBankForCooking() throws CannotOpenWidgetException {
+        boolean hasCooked = InventoryUtils.hasAnyItem(script, pieMaker.pieType.getCookedId());
+        boolean hasUncooked = InventoryUtils.hasItem(script, pieMaker.pieType.getUncookedId());
+        return hasCooked || !hasUncooked;
     }
 
-    private boolean checkNeedsBank(int input1, int input2, int output) {
-        ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(input1, input2, output));
-        if (inv == null) return false;
-        if (inv.contains(output)) return true;
-        return !inv.contains(input1) || !inv.contains(input2);
+    private boolean checkNeedsBank(int input1, int input2, int output) throws CannotOpenWidgetException {
+        boolean hasOutput = InventoryUtils.hasAnyItem(script, output);
+        boolean hasAllInputs = InventoryUtils.hasAllItems(script, input1, input2);
+        return hasOutput || !hasAllInputs;
     }
 
     @Override

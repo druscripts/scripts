@@ -5,7 +5,6 @@ import com.druscripts.utils.widget.InventoryUtils;
 import com.druscripts.utils.widget.exception.CannotOpenWidgetException;
 import com.druscripts.utils.script.FreeScript;
 import com.druscripts.utils.paint.PaintStyle;
-import com.druscripts.utils.script.Task;
 import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.data.DyeType;
 import com.druscripts.dyemaker.tasks.*;
@@ -14,14 +13,10 @@ import com.osmb.api.script.ScriptDefinition;
 import com.osmb.api.script.SkillCategory;
 import com.osmb.api.visual.drawing.Canvas;
 import com.osmb.api.walker.WalkConfig;
-import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.location.position.types.WorldPosition;
 import com.osmb.api.scene.RSTile;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 @ScriptDefinition(
     name = "DyeMaker.druscripts.com",
@@ -47,9 +42,6 @@ public class DyeMaker extends FreeScript {
         .breakDistance(0)
         .build();
 
-
-    private List<Task> tasks;
-
     public DyeMaker(Object scriptCore) {
         super(scriptCore);
     }
@@ -64,24 +56,11 @@ public class DyeMaker extends FreeScript {
         super.onStart();
         startTime = System.currentTimeMillis();
 
-        tasks = new ArrayList<>();
         tasks.add(new SetupTask(this));
         tasks.add(new MakeDyeTask(this));
         tasks.add(new WalkToBankTask(this));
         tasks.add(new BankTask(this));
         tasks.add(new WalkToAggieTask(this));
-    }
-
-    @Override
-    public int poll() {
-        for (Task t : tasks) {
-            if (t.activate()) {
-                t.execute();
-                return 0;
-            }
-        }
-
-        return 100;
     }
 
     private final int WIDTH = 200;
@@ -122,19 +101,16 @@ public class DyeMaker extends FreeScript {
     public boolean hasMaterials() {
         if (selectedDyeType == null) return false;
 
-        ItemGroupResult inv = getWidgetManager().getInventory().search(
-            Set.of(selectedDyeType.getIngredientId(), Constants.COINS_ID)
-        );
-        if (inv == null) return false;
+        try {
+            int ingredientAmount = InventoryUtils.getItemCount(this, selectedDyeType.getIngredientId());
+            int coinAmount = InventoryUtils.getItemCount(this, Constants.COINS_ID);
 
-        if (!inv.contains(Constants.COINS_ID)) return false;
-        if (!inv.contains(selectedDyeType.getIngredientId())) return false;
-
-        int ingredientAmount = inv.getAmount(selectedDyeType.getIngredientId());
-        int coinAmount = inv.getAmount(Constants.COINS_ID);
-
-        return ingredientAmount >= selectedDyeType.getIngredientCount() &&
-            coinAmount >= Constants.COINS_PER_DYE;
+            return ingredientAmount >= selectedDyeType.getIngredientCount() &&
+                coinAmount >= Constants.COINS_PER_DYE;
+        } catch (CannotOpenWidgetException e) {
+            log(getClass(), e.getMessage());
+            return false;
+        }
     }
 
     public boolean hasDyes() {
