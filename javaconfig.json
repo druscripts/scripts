@@ -1,0 +1,9 @@
+{
+    "sourcePath": [
+        "src"
+    ],
+    "classPath": [
+        "../osmb_scripts/API.jar"
+    ],
+    "outputDirectory": "build/classes"
+}
