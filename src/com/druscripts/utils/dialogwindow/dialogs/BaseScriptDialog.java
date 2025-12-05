@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -64,8 +65,15 @@ public abstract class BaseScriptDialog {
     protected double mouseX = 0;
     protected double mouseY = 0;
 
-    // UI dismissed flag
-    protected volatile boolean dismissed = false;
+    // Pending click (consumed during render)
+    protected double clickX = -1;
+    protected double clickY = -1;
+
+    // True when user clicks Start button
+    protected volatile boolean started = false;
+
+    // Canvas reference for window hiding
+    private Canvas canvas;
 
     // Canvas dimensions (set by subclass)
     protected final double canvasWidth;
@@ -101,25 +109,35 @@ public abstract class BaseScriptDialog {
 
     /**
      * Get the description text to display in the info panel.
+     * Used by the default renderInfoPanelContent implementation.
      */
     protected abstract String getDescription();
 
     /**
+     * Render the info panel content (left column, below header).
+     * Override this method for custom rendering (e.g., showing location with icons).
+     * Default implementation renders getDescription() as wrapped text.
+     *
+     * @param gc The graphics context
+     * @param x The x position (inside padding)
+     * @param y The y position (inside padding)
+     * @param width The available width for content
+     */
+    protected void renderInfoPanelContent(GraphicsContext gc, double x, double y, double width) {
+        gc.setFill(Color.web(Theme.TEXT_MUTED));
+        gc.setFont(Font.font("Arial", 11));
+        wrapText(gc, getDescription(), x, y, width);
+    }
+
+    /**
      * Render the right column configuration content.
+     * Use consumeClick() to check for and handle clicks in an immediate-mode style.
      * @param gc The graphics context
      * @param x The x position of the right column content area (inside padding)
      * @param y The y position of the right column content area (inside padding)
      * @param width The available width for content
      */
     protected abstract void renderRightColumnContent(GraphicsContext gc, double x, double y, double width);
-
-    /**
-     * Handle clicks in the right column.
-     * @param clickX The x position of the click
-     * @param clickY The y position of the click
-     * @return true if the click was handled
-     */
-    protected abstract boolean handleRightColumnClick(double clickX, double clickY);
 
     /**
      * Called when the Start button is clicked, before dismissing the dialog.
@@ -134,7 +152,7 @@ public abstract class BaseScriptDialog {
     protected abstract void loadPreferences();
 
     public Scene buildScene() {
-        Canvas canvas = new Canvas(canvasWidth, canvasHeight);
+        this.canvas = new Canvas(canvasWidth, canvasHeight);
         GraphicsContext gc = canvas.getGraphicsContext2D();
 
         // Mouse tracking
@@ -144,12 +162,13 @@ public abstract class BaseScriptDialog {
         });
 
         canvas.setOnMouseClicked(this::handleClick);
+        canvas.setOnScroll(this::handleScroll);
 
         // Animation loop - redraw everything each frame
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                if (dismissed) {
+                if (started) {
                     stop();
                     return;
                 }
@@ -176,6 +195,10 @@ public abstract class BaseScriptDialog {
 
         // Right column
         renderRightColumn(gc);
+
+        // Clear pending click after render (subclass had chance to consume it)
+        clickX = -1;
+        clickY = -1;
     }
 
     private void renderLeftColumn(GraphicsContext gc) {
@@ -206,19 +229,44 @@ public abstract class BaseScriptDialog {
             mouseX, mouseY
         );
         websiteLink.render(gc);
+        if (clickX >= 0 && websiteLink.isClicked(clickX, clickY)) {
+            clickX = -1;
+            clickY = -1;
+        }
 
         // Info panel
         drawPanel(gc, x, INFO_PANEL_Y, LEFT_COLUMN_WIDTH, INFO_PANEL_HEIGHT);
 
-        gc.setFill(Color.web(Theme.TEXT_MUTED));
-        gc.setFont(Font.font("Arial", 11));
-        wrapText(gc, getDescription(), x + PANEL_PADDING, INFO_PANEL_Y + 30, BUTTON_WIDTH);
+        // Delegate info panel content to overridable method
+        renderInfoPanelContent(gc, x + PANEL_PADDING, INFO_PANEL_Y + 25, BUTTON_WIDTH);
 
         // Start button
         double buttonX = x + PANEL_PADDING;
         double buttonY = INFO_PANEL_Y + BUTTON_Y_OFFSET;
         boolean startHover = isHovering(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT);
         drawButton(gc, buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, "Start Script", startHover);
+
+        if (consumeClick(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT)) {
+            onStart();
+            started = true;
+            closeWindow();
+        }
+    }
+
+    /**
+     * Close the dialog window.
+     */
+    private void closeWindow() {
+        if (canvas != null && canvas.getScene() != null) {
+            javafx.application.Platform.runLater(() -> {
+                javafx.stage.Window window = canvas.getScene().getWindow();
+                if (window instanceof javafx.stage.Stage) {
+                    ((javafx.stage.Stage) window).close();
+                } else if (window != null) {
+                    window.hide();
+                }
+            });
+        }
     }
 
     private void renderRightColumn(GraphicsContext gc) {
@@ -237,31 +285,21 @@ public abstract class BaseScriptDialog {
     }
 
     private void handleClick(MouseEvent e) {
-        double clickX = e.getX();
-        double clickY = e.getY();
+        // Store click for processing during next render
+        this.clickX = e.getX();
+        this.clickY = e.getY();
+    }
 
-        // Website link
-        if (websiteLink != null && websiteLink.isClicked(clickX, clickY)) {
-            return;
-        }
+    private void handleScroll(ScrollEvent e) {
+        onScroll(e.getDeltaY());
+    }
 
-        // Start button
-        double buttonX = LEFT_COLUMN_X + PANEL_PADDING;
-        double buttonY = INFO_PANEL_Y + BUTTON_Y_OFFSET;
-        if (isInRect(clickX, clickY, buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT)) {
-            onStart();
-            dismissed = true;
-            javafx.application.Platform.runLater(() -> {
-                javafx.stage.Window window = ((Canvas)e.getSource()).getScene().getWindow();
-                if (window != null) {
-                    window.hide();
-                }
-            });
-            return;
-        }
-
-        // Right column clicks
-        handleRightColumnClick(clickX, clickY);
+    /**
+     * Called when the user scrolls. Override to handle scroll events.
+     * @param deltaY Positive for scroll up, negative for scroll down
+     */
+    protected void onScroll(double deltaY) {
+        // Default: no-op. Subclasses can override.
     }
 
     // === Utility methods for subclasses (delegate to CanvasUtils) ===
@@ -291,9 +329,30 @@ public abstract class BaseScriptDialog {
     }
 
     /**
-     * Check if the dialog was dismissed by clicking Start.
+     * Check if a pending click is within the given bounds and consume it.
+     * Returns true if clicked, false otherwise. The click is consumed either way
+     * at end of frame, but this allows early consumption for overlapping regions.
      */
-    public boolean isDismissed() {
-        return dismissed;
+    protected boolean consumeClick(double x, double y, double w, double h) {
+        if (clickX >= 0 && isInRect(clickX, clickY, x, y, w, h)) {
+            clickX = -1;
+            clickY = -1;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if there's a pending click (without consuming it).
+     */
+    protected boolean hasPendingClick() {
+        return clickX >= 0;
+    }
+
+    /**
+     * Check if the user clicked Start to confirm their selections.
+     */
+    public boolean wasStarted() {
+        return started;
     }
 }
