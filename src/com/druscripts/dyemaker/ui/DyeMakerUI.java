@@ -10,6 +10,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import java.util.prefs.Preferences;
+
 /**
  * DyeMaker configuration dialog using the standard BaseScriptDialog layout.
  */
@@ -19,6 +21,8 @@ public class DyeMakerUI extends BaseScriptDialog {
     private static final double RIGHT_COL_HEIGHT = 368;
     private static final String DESCRIPTION = "Makes dyes at Aggie's shop in Draynor Village. " +
             "Start near Draynor bank or Aggie's house with coins and ingredients in your bank.";
+
+    private final Preferences prefs = Preferences.userNodeForPackage(DyeMakerUI.class);
 
     private DyeType selectedDyeType = DyeType.RED;
 
@@ -34,29 +38,24 @@ public class DyeMakerUI extends BaseScriptDialog {
 
     @Override
     protected void renderRightColumnContent(GraphicsContext gc, double x, double y, double width) {
-        // Dye Type Selection label
         gc.setFill(Color.web(Theme.TEXT_PRIMARY));
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 13));
         gc.fillText("Select Dye Type:", x, y);
 
         double contentY = y + 30;
 
-        // Render radio buttons for each dye type
         for (DyeType dye : DyeType.values()) {
-            new RadioButton(
-                x,
-                contentY,
-                dye.getDisplayName(),
-                selectedDyeType == dye,
-                mouseX,
-                mouseY
-            ).render(gc);
+            if (RadioButton.render(gc, x, contentY, dye.getDisplayName(),
+                    selectedDyeType == dye, mouseX, mouseY, clickX, clickY)) {
+                selectedDyeType = dye;
+                clickX = -1;  // Consume click
+                clickY = -1;
+            }
             contentY += 35;
         }
 
         contentY += 15;
 
-        // Selected dye info
         gc.setFill(Color.web(Theme.TEXT_MUTED));
         gc.setFont(Font.font("Arial", 11));
         String info = "Requires: " + selectedDyeType.getIngredientCount() + "x " +
@@ -65,42 +64,20 @@ public class DyeMakerUI extends BaseScriptDialog {
     }
 
     @Override
-    protected boolean handleRightColumnClick(double clickX, double clickY) {
-        double x = RIGHT_COLUMN_X + PANEL_PADDING;
-        double y = RIGHT_COLUMN_Y + 60 + 30;  // After "Configuration" header and label
-
-        for (DyeType dye : DyeType.values()) {
-            RadioButton radio = new RadioButton(
-                x,
-                y,
-                dye.getDisplayName(),
-                selectedDyeType == dye,
-                mouseX,
-                mouseY
-            );
-            if (radio.isClicked(clickX, clickY)) {
-                selectedDyeType = dye;
-                return true;
-            }
-            y += 35;
-        }
-        return false;
-    }
-
-    @Override
     protected void onStart() {
-        // No preferences to save for now
+        prefs.put("dyemaker_dyeType", selectedDyeType.name());
     }
 
     @Override
     protected void loadPreferences() {
-        // No preferences to load for now
+        try {
+            selectedDyeType = DyeType.valueOf(prefs.get("dyemaker_dyeType", DyeType.RED.name()));
+        } catch (Exception e) {
+            selectedDyeType = DyeType.RED;
+        }
     }
 
-    /**
-     * Get the selected dye type. Returns null if user closed without confirming.
-     */
     public DyeType getSelectedDyeType() {
-        return isDismissed() ? selectedDyeType : null;
+        return wasStarted() ? selectedDyeType : null;
     }
 }
