@@ -5,8 +5,10 @@ import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.ui.tabs.Tab;
 import com.druscripts.utils.widget.exception.CannotOpenWidgetException;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Utility class for common inventory operations.
@@ -35,11 +37,8 @@ public class InventoryUtils {
      */
     public static boolean isEmpty(Script script) {
         ensureInventoryTabOpen(script);
-
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(Collections.emptySet());
-
-        boolean empty = inv.getFreeSlots() == script.getWidgetManager().getInventory().getGroupSize();
-
+        boolean empty = inv.getFreeSlots() == getTotalSlots(script);
         script.log(InventoryUtils.class, empty ? "Inv Empty" : "Inv Not Empty");
         return empty;
     }
@@ -53,9 +52,7 @@ public class InventoryUtils {
      */
     public static int getFreeSlots(Script script) {
         ensureInventoryTabOpen(script);
-
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(Collections.emptySet());
-
         return inv.getFreeSlots();
     }
 
@@ -93,7 +90,7 @@ public class InventoryUtils {
     public static boolean hasItem(Script script, int itemId) {
         ensureInventoryTabOpen(script);
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(itemId));
-        return inv != null && inv.contains(itemId);
+        return inv.contains(itemId);
     }
 
     /**
@@ -107,7 +104,42 @@ public class InventoryUtils {
     public static int getItemCount(Script script, int itemId) {
         ensureInventoryTabOpen(script);
         ItemGroupResult inv = script.getWidgetManager().getInventory().search(Set.of(itemId));
-        if (inv == null || !inv.contains(itemId)) return 0;
-        return inv.getAmount(itemId);
+        return inv.contains(itemId) ? inv.getAmount(itemId) : 0;
+    }
+
+    /**
+     * Checks if the inventory contains ALL of the specified items.
+     *
+     * @param script The script instance
+     * @param itemIds The item IDs to check for
+     * @return true if ALL items are in the inventory, false otherwise
+     * @throws CannotOpenWidgetException if inventory cannot be opened
+     */
+    public static boolean hasAllItems(Script script, int... itemIds) {
+        ensureInventoryTabOpen(script);
+        Set<Integer> ids = Arrays.stream(itemIds).boxed().collect(Collectors.toSet());
+        ItemGroupResult inv = script.getWidgetManager().getInventory().search(ids);
+        for (int id : itemIds) {
+            if (!inv.contains(id)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Checks if the inventory contains ANY of the specified items.
+     *
+     * @param script The script instance
+     * @param itemIds The item IDs to check for
+     * @return true if ANY item is in the inventory, false otherwise
+     * @throws CannotOpenWidgetException if inventory cannot be opened
+     */
+    public static boolean hasAnyItem(Script script, int... itemIds) {
+        ensureInventoryTabOpen(script);
+        Set<Integer> ids = Arrays.stream(itemIds).boxed().collect(Collectors.toSet());
+        ItemGroupResult inv = script.getWidgetManager().getInventory().search(ids);
+        for (int id : itemIds) {
+            if (inv.contains(id)) return true;
+        }
+        return false;
     }
 }
