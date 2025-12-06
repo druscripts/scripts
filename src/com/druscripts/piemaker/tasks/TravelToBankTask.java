@@ -41,7 +41,7 @@ public class TravelToBankTask extends Task {
     @Override
     public void execute() {
         pieMaker.task = "Travel to bank";
-        // Stage will be set by BankTask after banking
+        // Stage will be set by BankAndManageStageTask after banking
         script.log(getClass(), "Traveling to bank...");
 
         WorldPosition myPos = script.getWorldPosition();

@@ -2,32 +2,33 @@ package com.druscripts.piemaker.tasks.processing;
 
 import com.druscripts.piemaker.PieMaker;
 import com.druscripts.piemaker.data.Constants;
+import com.druscripts.piemaker.data.Stage;
 import com.druscripts.utils.script.Task;
 import com.druscripts.utils.production.CombineItemsTask;
-import com.druscripts.utils.production.CombineItemsConfig;
 
 public class MakePastryDoughTask extends Task {
 
+    private final PieMaker pieMaker;
     private final CombineItemsTask combineTask;
 
     public MakePastryDoughTask(PieMaker pieMaker, int waterSourceId) {
         super(pieMaker);
-
-        CombineItemsConfig config = new CombineItemsConfig(
-            waterSourceId, Constants.FLOUR, Constants.PASTRY_DOUGH,
+        this.pieMaker = pieMaker;
+        this.combineTask = new CombineItemsTask(
+            pieMaker, waterSourceId, Constants.FLOUR, Constants.PASTRY_DOUGH,
             "MakePastryDough", pieMaker::increaseItemsMade
         );
-
-        this.combineTask = new CombineItemsTask(pieMaker, config);
     }
 
     @Override
     public boolean activate() {
+        if (pieMaker.stage != Stage.MAKE_DOUGH) return false;
         return combineTask.activate();
     }
 
     @Override
     public void execute() {
+        pieMaker.task = "Making pastry dough";
         combineTask.execute();
     }
 }

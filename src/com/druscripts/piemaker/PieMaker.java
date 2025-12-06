@@ -131,7 +131,7 @@ public class PieMaker extends FreeScript {
             }
         }
 
-        tasks.add(new BankTask(this));
+        tasks.add(new BankAndManageStageTask(this));
         log(getClass().getSimpleName(), "Production tasks initialized");
     }
 

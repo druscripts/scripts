@@ -4,7 +4,6 @@ import com.druscripts.piemaker.PieMaker;
 import com.druscripts.piemaker.data.Constants;
 import com.druscripts.piemaker.data.Stage;
 import com.druscripts.utils.production.CombineItemsTask;
-import com.druscripts.utils.production.CombineItemsConfig;
 import com.druscripts.utils.script.Task;
 
 public class MakeUncookedPieTask extends Task {
@@ -15,20 +14,15 @@ public class MakeUncookedPieTask extends Task {
     public MakeUncookedPieTask(PieMaker script) {
         super(script);
         this.pieMaker = script;
-
-        CombineItemsConfig config = new CombineItemsConfig(
-            pieMaker.pieType.getIngredientId(), Constants.PIE_SHELL, pieMaker.pieType.getUncookedId(),
+        this.combineTask = new CombineItemsTask(
+            script, pieMaker.pieType.getIngredientId(), Constants.PIE_SHELL, pieMaker.pieType.getUncookedId(),
             "MakeUncookedPie", pieMaker::increaseItemsMade
         );
-
-        this.combineTask = new CombineItemsTask(script, config);
     }
 
     @Override
     public boolean activate() {
-        if (!pieMaker.allInOne && pieMaker.stage != Stage.MAKE_UNCOOKED) {
-            return false;
-        }
+        if (pieMaker.stage != Stage.MAKE_UNCOOKED) return false;
         return combineTask.activate();
     }
 
