@@ -13,16 +13,10 @@ public class MakePastryDoughTask extends Task {
     public MakePastryDoughTask(PieMaker pieMaker, int waterSourceId) {
         super(pieMaker);
 
-        CombineItemsConfig config = new CombineItemsConfig.Builder()
-            .primaryItem(waterSourceId)
-            .secondaryItem(Constants.FLOUR)
-            .resultItem(Constants.PASTRY_DOUGH)
-            .taskDescription("Making pastry dough")
-            .combiningDescription("Using water on flour")
-            .craftingDescription("Crafting pastry dough")
-            .logClassName("MakePastryDoughTask")
-            .onItemsCrafted(pieMaker::increaseItemsMade)
-            .build();
+        CombineItemsConfig config = new CombineItemsConfig(
+            waterSourceId, Constants.FLOUR, Constants.PASTRY_DOUGH,
+            "MakePastryDough", pieMaker::increaseItemsMade
+        );
 
         this.combineTask = new CombineItemsTask(pieMaker, config);
     }

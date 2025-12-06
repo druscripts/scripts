@@ -53,7 +53,7 @@ public class CombineItemsTask extends Task {
 
     @Override
     public void execute() {
-        log(config.getTaskDescription());
+        log("Starting");
 
         // Close bank if visible
         if (script.getWidgetManager().getBank().isVisible()) {
@@ -76,7 +76,7 @@ public class CombineItemsTask extends Task {
         }
 
         // Use primary item on secondary item
-        log(config.getCombiningDescription());
+        log("Combining items");
 
         ItemSearchResult primaryItem = inventory.getItem(new int[]{config.getPrimaryItemId()});
         if (primaryItem == null) {
@@ -170,11 +170,11 @@ public class CombineItemsTask extends Task {
     }
 
     private void log(String message) {
-        script.log(config.getLogClassName(), message);
+        script.log(config.getTaskName(), message);
     }
 
     private void waitUntilCraftingComplete() {
-        log(config.getCraftingDescription());
+        log("Crafting...");
 
         // Wait until we have no more of either ingredient (all items have been crafted)
         script.pollFramesHuman(() -> {

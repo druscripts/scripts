@@ -16,16 +16,10 @@ public class MakeUncookedPieTask extends Task {
         super(script);
         this.pieMaker = script;
 
-        CombineItemsConfig config = new CombineItemsConfig.Builder()
-            .primaryItem(pieMaker.pieType.getIngredientId())
-            .secondaryItem(Constants.PIE_SHELL)
-            .resultItem(pieMaker.pieType.getUncookedId())
-            .taskDescription("Adding ingredients to pies")
-            .combiningDescription("Using " + pieMaker.pieType.getIngredientName() + " on pie shell")
-            .craftingDescription("Filling pies")
-            .logClassName("MakeUncookedPieTask")
-            .onItemsCrafted(pieMaker::increaseItemsMade)
-            .build();
+        CombineItemsConfig config = new CombineItemsConfig(
+            pieMaker.pieType.getIngredientId(), Constants.PIE_SHELL, pieMaker.pieType.getUncookedId(),
+            "MakeUncookedPie", pieMaker::increaseItemsMade
+        );
 
         this.combineTask = new CombineItemsTask(script, config);
     }
