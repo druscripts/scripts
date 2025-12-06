@@ -45,6 +45,7 @@ public final class Constants {
     public static final int DISH_COUNT = 14;
     public static final int SHELL_COUNT = 14;
     public static final int INGREDIENT_COUNT = 14;
+    public static final int UNCOOKED_COUNT = 28;
 
     // === Bank Detection ===
     public static final String[] BANK_NAMES = {

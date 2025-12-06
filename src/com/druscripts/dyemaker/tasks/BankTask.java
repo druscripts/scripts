@@ -42,17 +42,10 @@ public class BankTask extends Task {
         try {
             if (!InventoryUtils.isEmpty(dm)) {
                 dm.task = "Depositing";
-                dm.getWidgetManager().getBank().depositAll(Collections.emptySet());
-
-                // sanity check
-                boolean depositSuccess = dm.pollFramesHuman(() -> {
-                    try {
-                        return InventoryUtils.isEmpty(dm);
-                    } catch (CannotOpenWidgetException e) {
-                        return false;
-                    }
-                }, 3000, true);
-                if (!depositSuccess) return;
+                if (!dm.getWidgetManager().getBank().depositAll(Collections.emptySet())) {
+                    dm.log(getClass(), "Deposit failed");
+                    return;
+                }
             }
         } catch (CannotOpenWidgetException e) {
             dm.log(getClass(), e.getMessage());

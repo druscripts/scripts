@@ -1,6 +1,5 @@
 package com.druscripts.piemaker.tasks;
 
-import com.druscripts.piemaker.PieMaker;
 import com.druscripts.piemaker.data.Constants;
 import com.druscripts.piemaker.data.Stage;
 import com.druscripts.utils.script.Task;
@@ -8,14 +7,15 @@ import com.druscripts.utils.widget.InventoryUtils;
 import com.druscripts.utils.widget.exception.CannotOpenWidgetException;
 import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.scene.RSObject;
-import javafx.application.Platform;
-import javafx.scene.control.Alert;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import com.druscripts.piemaker.PieMaker;
+
 
 public class BankAndManageStageTask extends Task {
 
@@ -54,20 +54,20 @@ public class BankAndManageStageTask extends Task {
                     return false;
             }
         } catch (CannotOpenWidgetException e) {
-            script.log(getClass(), e.getMessage());
+            pieMaker.log(getClass(), e.getMessage());
             return false;
         }
     }
 
     private boolean needsBankForCooking() throws CannotOpenWidgetException {
-        boolean hasCooked = InventoryUtils.hasAnyItem(script, pieMaker.pieType.getCookedId());
-        boolean hasUncooked = InventoryUtils.hasItem(script, pieMaker.pieType.getUncookedId());
+        boolean hasCooked = InventoryUtils.hasAnyItem(pieMaker, pieMaker.pieType.getCookedId());
+        boolean hasUncooked = InventoryUtils.hasItem(pieMaker, pieMaker.pieType.getUncookedId());
         return hasCooked || !hasUncooked;
     }
 
     private boolean needsBankForStage(int input1, int input2, int output) throws CannotOpenWidgetException {
-        boolean hasOutput = InventoryUtils.hasAnyItem(script, output);
-        boolean hasAllInputs = InventoryUtils.hasAllItems(script, input1, input2);
+        boolean hasOutput = InventoryUtils.hasAnyItem(pieMaker, output);
+        boolean hasAllInputs = InventoryUtils.hasAllItems(pieMaker, input1, input2);
         return hasOutput || !hasAllInputs;
     }
 
@@ -75,65 +75,60 @@ public class BankAndManageStageTask extends Task {
     public void execute() {
         pieMaker.task = "Banking";
 
-        if (!script.getWidgetManager().getBank().isVisible()) {
-            script.log(getClass(), "Opening bank...");
+        if (!pieMaker.getWidgetManager().getBank().isVisible()) {
+            pieMaker.log(getClass(), "Opening bank...");
             openBank();
             return;
         }
 
-        pieMaker.task = "Depositing items";
-        if (!script.getWidgetManager().getBank().depositAll(Collections.emptySet())) {
-            script.log(getClass(), "Deposit failed, closing bank...");
-            script.getWidgetManager().getBank().close();
-            return;
-        }
-
-        // Sanity check
-        if (!script.pollFramesHuman(() -> {
-            try {
-                return InventoryUtils.isEmpty(script);
-            } catch (CannotOpenWidgetException e) {
-                return false;
+        try {
+            if (!InventoryUtils.isEmpty(pieMaker)) {
+                pieMaker.task = "Depositing";
+                if (!pieMaker.getWidgetManager().getBank().depositAll(Collections.emptySet())) {
+                    pieMaker.log(getClass(), "Deposit failed");
+                    return;
+                }
             }
-        }, 3000, true)) {
-            script.log(getClass(), "Deposit sanity check failed");
+        } catch (CannotOpenWidgetException e) {
+            pieMaker.log(getClass(), e.getMessage());
             return;
         }
 
         updateBankCounts();
-        if (!setStage()) {
-            showOutOfMaterialsAlert();
+
+        if (pieMaker.allInOne) {
+            setStage();
+        } else {
+            if (!canDoStage(pieMaker.stage)) {
+                showOutOfMaterialsAlert();
+            }
+        }
+
+        if (!withdrawForStage()) {
+            pieMaker.log(getClass(), "Withdrawal failed, closing bank...");
+            pieMaker.getWidgetManager().getBank().close();
             return;
         }
 
-        boolean success = withdrawForStage();
-
-        if (!success) {
-            script.log(getClass(), "Withdrawal failed, closing bank...");
-            script.getWidgetManager().getBank().close();
-            return;
-        }
-
-        updateBankCounts();
-        script.log(getClass(), "Closing bank...");
-        script.getWidgetManager().getBank().close();
+        pieMaker.log(getClass(), "Closing bank...");
+        pieMaker.getWidgetManager().getBank().close();
     }
 
     private void openBank() {
-        List<RSObject> banks = script.getObjectManager().getObjects(BANK_QUERY);
+        List<RSObject> banks = pieMaker.getObjectManager().getObjects(BANK_QUERY);
         if (banks.isEmpty()) {
-            script.log(getClass(), "No bank found.");
+            pieMaker.log(getClass(), "No bank found.");
             return;
         }
 
-        RSObject bank = (RSObject) script.getUtils().getClosest(banks);
+        RSObject bank = (RSObject) pieMaker.getUtils().getClosest(banks);
         if (!bank.interact(Constants.BANK_ACTIONS)) {
-            script.log(getClass(), "Failed to interact with bank.");
+            pieMaker.log(getClass(), "Failed to interact with bank.");
             return;
         }
 
-        double dist = bank.distance(script.getWorldPosition());
-        script.pollFramesHuman(() -> script.getWidgetManager().getBank().isVisible(), (int)(dist * 1000 + 500), true);
+        double dist = bank.distance(pieMaker.getWorldPosition());
+        pieMaker.pollFramesHuman(() -> pieMaker.getWidgetManager().getBank().isVisible(), (int)(dist * 1000 + 500), true);
     }
 
     private void updateBankCounts() {
@@ -147,13 +142,13 @@ public class BankAndManageStageTask extends Task {
     }
 
     private int getBankAmount(int itemId) {
-        ItemGroupResult bank = script.getWidgetManager().getBank().search(Set.of(itemId));
+        ItemGroupResult bank = pieMaker.getWidgetManager().getBank().search(Set.of(itemId));
         if (bank == null || !bank.contains(itemId)) return 0;
         return bank.getAmount(new int[]{itemId});
     }
 
     private void showOutOfMaterialsAlert() {
-        script.log(getClass(), "Out of materials!");
+        pieMaker.log(getClass(), "Out of materials!");
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Script Complete");
@@ -161,29 +156,30 @@ public class BankAndManageStageTask extends Task {
             alert.setContentText("Processed all available materials.\n\nItems made: " + pieMaker.itemsMade);
             alert.showAndWait();
         });
-        script.stop();
+        pieMaker.stop();
     }
 
     /**
      * Sets the stage based on bank contents.
-     * Returns false if no materials are available.
      */
-    private boolean setStage() {
-        Stage newStage = null;
+    private void setStage() {
+        if (!pieMaker.allInOne) return;
 
-        // Check stages in order from earliest to latest
+        Stage newStage = null;
         if (canDoStage(Stage.MAKE_DOUGH)) newStage = Stage.MAKE_DOUGH;
         else if (canDoStage(Stage.MAKE_SHELL)) newStage = Stage.MAKE_SHELL;
         else if (canDoStage(Stage.MAKE_UNCOOKED)) newStage = Stage.MAKE_UNCOOKED;
         else if (pieMaker.isLumbridge() && canDoStage(Stage.COOK)) newStage = Stage.COOK;
 
-        if (newStage == null) return false;
+        if (newStage == null) {
+            showOutOfMaterialsAlert();
+            return;
+        }
 
         if (newStage != pieMaker.stage) {
             script.log(getClass(), "Stage: " + pieMaker.stage + " -> " + newStage);
             pieMaker.stage = newStage;
         }
-        return true;
     }
 
     private boolean canDoStage(Stage stage) {
@@ -213,20 +209,20 @@ public class BankAndManageStageTask extends Task {
                 return withdraw(Constants.PIE_SHELL, Constants.SHELL_COUNT, "pie shells")
                     && withdraw(pieMaker.pieType.getIngredientId(), Constants.INGREDIENT_COUNT, pieMaker.pieType.getIngredientName());
             case COOK:
-                return withdraw(pieMaker.pieType.getUncookedId(), 28, "uncooked pies");
+                return withdraw(pieMaker.pieType.getUncookedId(), Constants.UNCOOKED_COUNT, "uncooked pies");
             default:
                 return false;
         }
     }
 
     private boolean withdraw(int itemId, int count, String name) {
-        ItemGroupResult bank = script.getWidgetManager().getBank().search(Set.of(itemId));
+        ItemGroupResult bank = pieMaker.getWidgetManager().getBank().search(Set.of(itemId));
         if (bank == null || !bank.contains(itemId)) {
-            script.log(getClass(), "No " + name + " in bank");
+            pieMaker.log(getClass(), "No " + name + " in bank");
             return false;
         }
-        if (!script.getWidgetManager().getBank().withdraw(itemId, count)) {
-            script.log(getClass(), "Failed to withdraw " + name);
+        if (!pieMaker.getWidgetManager().getBank().withdraw(itemId, count)) {
+            pieMaker.log(getClass(), "Failed to withdraw " + name);
             return false;
         }
         return true;
