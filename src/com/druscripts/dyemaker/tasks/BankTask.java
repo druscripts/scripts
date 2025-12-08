@@ -3,6 +3,8 @@ package com.druscripts.dyemaker.tasks;
 import com.druscripts.utils.script.FreeScript;
 import com.druscripts.utils.script.Task;
 import com.druscripts.utils.dialogwindow.dialogs.ErrorDialog;
+import com.druscripts.utils.widget.InventoryUtils;
+import com.druscripts.utils.widget.exception.CannotOpenWidgetException;
 import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.DyeMaker;
 import com.druscripts.dyemaker.data.DyeType;
@@ -36,20 +38,18 @@ public class BankTask extends Task {
             return;
         }
 
-        ItemGroupResult inv = dm.getWidgetManager().getInventory().search(Collections.emptySet());
-        if (inv == null) return;
         // NOTE: Easier to deposit everything even if partial withdrawl was successful last poll
-        if (inv.getFreeSlots() < Constants.MAX_INVENTORY_SIZE) {
-            dm.task = "Depositing";
-            dm.getWidgetManager().getBank().depositAll(Collections.emptySet());
-
-            // sanity check
-            boolean depositSuccess = dm.pollFramesHuman(() -> {
-                ItemGroupResult check = dm.getWidgetManager().getInventory().search(Collections.emptySet());
-                return check == null || check.getFreeSlots() == Constants.MAX_INVENTORY_SIZE;
-            }, 3000, true);
-
-            if (!depositSuccess) return;
+        try {
+            if (!InventoryUtils.isEmpty(dm)) {
+                dm.task = "Depositing";
+                if (!dm.getWidgetManager().getBank().depositAll(Collections.emptySet())) {
+                    dm.log(getClass(), "Deposit failed");
+                    return;
+                }
+            }
+        } catch (CannotOpenWidgetException e) {
+            dm.log(getClass(), e.getMessage());
+            return;
         }
 
         int coinsInBank = getBankAmount(Constants.COINS_ID);

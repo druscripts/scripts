@@ -2,6 +2,8 @@ package com.druscripts.dyemaker.tasks;
 
 import com.druscripts.utils.script.FreeScript;
 import com.druscripts.utils.script.Task;
+import com.druscripts.utils.widget.InventoryUtils;
+import com.druscripts.utils.widget.exception.CannotOpenWidgetException;
 import com.druscripts.dyemaker.DyeMaker;
 import com.druscripts.dyemaker.data.DyeType;
 import com.osmb.api.input.MenuEntry;
@@ -36,9 +38,15 @@ public class MakeDyeTask extends Task {
         dm.task = "Making dye";
         DyeType dyeType = dm.selectedDyeType;
 
-        ItemGroupResult inv = dm.getWidgetManager().getInventory().search(Set.of(dyeType.getIngredientId()));
-        if (inv == null) return;
-        int batches = inv.getAmount(dyeType.getIngredientId()) / dyeType.getIngredientCount();
+        int ingredientCount;
+        try {
+            ingredientCount = InventoryUtils.getItemCount(dm, dyeType.getIngredientId());
+        } catch (CannotOpenWidgetException e) {
+            dm.log(getClass(), e.getMessage());
+            return;
+        }
+        if (ingredientCount == 0) return;
+        int batches = ingredientCount / dyeType.getIngredientCount();
 
         if (!selectIngredient(dyeType)) return;
         if (!clickOnAggie()) return;

@@ -4,9 +4,12 @@ import com.druscripts.utils.stats.StatsClient;
 import com.osmb.api.script.Script;
 import com.osmb.api.script.ScriptDefinition;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Base class for all free DruScripts.
- * Provides common functionality like title management and stats sending.
+ * Provides common functionality like title management, stats sending, and task execution.
  *
  * When synced to free scripts, the package is transformed:
  * - Package: com.druscripts.utils.script -> com.druscripts.free.utils
@@ -17,6 +20,7 @@ public abstract class FreeScript extends Script {
     private String title;
     private String version;
     private StatsClient statsClient;
+    protected List<Task> tasks = new ArrayList<>();
 
     public FreeScript(Object scriptCore) {
         super(scriptCore);
@@ -36,6 +40,17 @@ public abstract class FreeScript extends Script {
 
         // Initialize stats client
         this.statsClient = new StatsClient(getScriptSlug(), this.version);
+    }
+
+    @Override
+    public int poll() {
+        for (Task t : tasks) {
+            if (t.activate()) {
+                t.execute();
+                return 0;
+            }
+        }
+        return 100;
     }
 
     /**

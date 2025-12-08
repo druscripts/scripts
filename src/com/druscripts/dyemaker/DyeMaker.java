@@ -1,24 +1,22 @@
 package com.druscripts.dyemaker;
 
+import com.druscripts.utils.location.AreaUtils;
+import com.druscripts.utils.widget.InventoryUtils;
+import com.druscripts.utils.widget.exception.CannotOpenWidgetException;
 import com.druscripts.utils.script.FreeScript;
 import com.druscripts.utils.paint.PaintStyle;
-import com.druscripts.utils.script.Task;
 import com.druscripts.dyemaker.data.Constants;
 import com.druscripts.dyemaker.data.DyeType;
 import com.druscripts.dyemaker.tasks.*;
+
 import com.osmb.api.script.ScriptDefinition;
 import com.osmb.api.script.SkillCategory;
 import com.osmb.api.visual.drawing.Canvas;
 import com.osmb.api.walker.WalkConfig;
-
-import com.osmb.api.item.ItemGroupResult;
 import com.osmb.api.location.position.types.WorldPosition;
 import com.osmb.api.scene.RSTile;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 @ScriptDefinition(
     name = "DyeMaker.druscripts.com",
@@ -44,9 +42,6 @@ public class DyeMaker extends FreeScript {
         .breakDistance(0)
         .build();
 
-
-    private List<Task> tasks;
-
     public DyeMaker(Object scriptCore) {
         super(scriptCore);
     }
@@ -61,7 +56,6 @@ public class DyeMaker extends FreeScript {
         super.onStart();
         startTime = System.currentTimeMillis();
 
-        tasks = new ArrayList<>();
         tasks.add(new SetupTask(this));
         tasks.add(new MakeDyeTask(this));
         tasks.add(new WalkToBankTask(this));
@@ -69,17 +63,8 @@ public class DyeMaker extends FreeScript {
         tasks.add(new WalkToAggieTask(this));
     }
 
-    @Override
-    public int poll() {
-        for (Task t : tasks) {
-            if (t.activate()) {
-                t.execute();
-                return 0;
-            }
-        }
-
-        return 100;
-    }
+    private final int WIDTH = 200;
+    private final int NUM_LINES = 5;
 
     @Override
     public void onPaint(Canvas c) {
@@ -91,7 +76,7 @@ public class DyeMaker extends FreeScript {
 
         String dyeTypeStr = selectedDyeType != null ? selectedDyeType.getDisplayName() : "Selecting...";
 
-        PaintStyle.drawBackground(c, 200, 5);
+        PaintStyle.drawBackground(c, WIDTH, NUM_LINES);
         int y = PaintStyle.drawTitle(c, "DyeMaker v" + getVersion());
         y = PaintStyle.drawLine(c, "Making: " + dyeTypeStr, y, PaintStyle.TEXT_COLOR_BRAND);
         y = PaintStyle.drawLine(c, "Task: " + task, y, PaintStyle.TEXT_COLOR_TASK);
@@ -116,26 +101,27 @@ public class DyeMaker extends FreeScript {
     public boolean hasMaterials() {
         if (selectedDyeType == null) return false;
 
-        ItemGroupResult inv = getWidgetManager().getInventory().search(
-            Set.of(selectedDyeType.getIngredientId(), Constants.COINS_ID)
-        );
-        if (inv == null) return false;
+        try {
+            int ingredientAmount = InventoryUtils.getItemCount(this, selectedDyeType.getIngredientId());
+            int coinAmount = InventoryUtils.getItemCount(this, Constants.COINS_ID);
 
-        if (!inv.contains(Constants.COINS_ID)) return false;
-        if (!inv.contains(selectedDyeType.getIngredientId())) return false;
-
-        int ingredientAmount = inv.getAmount(selectedDyeType.getIngredientId());
-        int coinAmount = inv.getAmount(Constants.COINS_ID);
-
-        return ingredientAmount >= selectedDyeType.getIngredientCount() &&
-            coinAmount >= Constants.COINS_PER_DYE;
+            return ingredientAmount >= selectedDyeType.getIngredientCount() &&
+                coinAmount >= Constants.COINS_PER_DYE;
+        } catch (CannotOpenWidgetException e) {
+            log(getClass(), e.getMessage());
+            return false;
+        }
     }
 
     public boolean hasDyes() {
         if (selectedDyeType == null) return false;
 
-        ItemGroupResult inv = getWidgetManager().getInventory().search(Set.of(selectedDyeType.getDyeId()));
-        return inv != null && inv.contains(selectedDyeType.getDyeId());
+        try {
+            return InventoryUtils.hasItem(this, selectedDyeType.getDyeId());
+        } catch (CannotOpenWidgetException e) {
+            log(getClass(), e.getMessage());
+            return false;
+        }
     }
 
     public boolean isAtPosition(WorldPosition pos, WorldPosition target) {
@@ -153,16 +139,7 @@ public class DyeMaker extends FreeScript {
     }
 
     public boolean isInBankArea(WorldPosition pos) {
-        if (pos == null) return false;
-        int px = pos.getX();
-        int py = pos.getY();
-        int pz = pos.getPlane();
-        int ax = Constants.DRAYNOR_BANK_AREA.getX();
-        int ay = Constants.DRAYNOR_BANK_AREA.getY();
-        int width = Constants.DRAYNOR_BANK_AREA.getWidth();
-        int height = Constants.DRAYNOR_BANK_AREA.getHeight();
-        int plane = Constants.DRAYNOR_BANK_AREA.getPlane();
-        return pz == plane && px >= ax && px < ax + width && py >= ay && py < ay + height;
+        return AreaUtils.isInArea(pos, Constants.DRAYNOR_BANK_AREA);
     }
 
     public WorldPosition getRandomBankTile() {
@@ -172,22 +149,6 @@ public class DyeMaker extends FreeScript {
     }
 
     public boolean isInAggieShop(WorldPosition pos) {
-        if (pos == null) return false;
-        int px = pos.getX();
-        int py = pos.getY();
-        int pz = pos.getPlane();
-
-        for (com.osmb.api.location.area.impl.RectangleArea area : Constants.AGGIE_SHOP_AREAS) {
-            int ax = area.getX();
-            int ay = area.getY();
-            int width = area.getWidth();
-            int height = area.getHeight();
-            int plane = area.getPlane();
-
-            if (pz == plane && px >= ax && px < ax + width && py >= ay && py < ay + height) {
-                return true;
-            }
-        }
-        return false;
+        return AreaUtils.isInAnyArea(pos, Constants.AGGIE_SHOP_AREAS);
     }
 }
