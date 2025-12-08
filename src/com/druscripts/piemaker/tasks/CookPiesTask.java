@@ -148,7 +148,7 @@ public class CookPiesTask extends Task {
         int newCooked = current - last;
 
         if (newCooked > 0) {
-            pieMaker.increaseItemsMade(newCooked);
+            pieMaker.increaseCookedPiesMade(newCooked);
         }
         lastCounts.put(cookedId, current);
     }

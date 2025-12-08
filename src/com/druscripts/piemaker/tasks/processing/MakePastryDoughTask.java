@@ -16,7 +16,7 @@ public class MakePastryDoughTask extends Task {
         this.pieMaker = pieMaker;
         this.combineTask = new CombineItemsTask(
             pieMaker, waterSourceId, Constants.FLOUR, Constants.PASTRY_DOUGH,
-            "MakePastryDough", pieMaker::increaseItemsMade
+            "MakePastryDough", pieMaker::increasePastryDoughMade
         );
     }
 

@@ -110,6 +110,7 @@ public class BankAndManageStageTask extends Task {
             return;
         }
 
+        pieMaker.completeLap();
         pieMaker.log(getClass(), "Closing bank...");
         pieMaker.getWidgetManager().getBank().close();
     }
@@ -153,7 +154,11 @@ public class BankAndManageStageTask extends Task {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Script Complete");
             alert.setHeaderText("Out of Materials");
-            alert.setContentText("Processed all available materials.\n\nItems made: " + pieMaker.itemsMade);
+            alert.setContentText("Processed all available materials.\n\n" +
+                "Pastry Dough: " + pieMaker.pastryDoughMade + "\n" +
+                "Pie Shells: " + pieMaker.pieShellsMade + "\n" +
+                "Uncooked Pies: " + pieMaker.uncookedPiesMade + "\n" +
+                "Cooked Pies: " + pieMaker.cookedPiesMade);
             alert.showAndWait();
         });
         pieMaker.stop();

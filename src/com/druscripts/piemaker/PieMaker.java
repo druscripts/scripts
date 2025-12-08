@@ -15,7 +15,7 @@ import com.osmb.api.script.SkillCategory;
     name = "PieMaker.druscripts.com",
     description = "All-in-one Lumbridge pie making - from flour to cooked pies",
     skillCategory = SkillCategory.COOKING,
-    version = 0.1,
+    version = 1.0,
     author = "dru"
 )
 public class PieMaker extends FreeScript {
@@ -24,7 +24,14 @@ public class PieMaker extends FreeScript {
     public String task = "Starting...";
     public boolean allInOne = true;
     public long startTime = System.currentTimeMillis();
-    public int itemsMade = 0;
+
+    // Stats
+    public int pastryDoughMade = 0;
+    public int pieShellsMade = 0;
+    public int uncookedPiesMade = 0;
+    public int cookedPiesMade = 0;
+    public boolean firstRoundComplete = false;
+    public long lapStartTime = System.currentTimeMillis();
 
     public int detectedRegion = -1;
     public int waterSourceId = Constants.JUG_OF_WATER;
@@ -62,15 +69,12 @@ public class PieMaker extends FreeScript {
     }
 
     private final int WIDTH = 200;
-    private final int NUM_LINES = 14;
+    private final int NUM_LINES = 17;
 
     @Override
     public void onPaint(com.osmb.api.visual.drawing.Canvas c) {
         long elapsed = System.currentTimeMillis() - startTime;
         String runtime = formatRuntime(elapsed);
-
-        double hours = Math.max(1.0E-9, (double) elapsed / 3600000.0);
-        int perHour = (int) Math.round((double) itemsMade / hours);
 
         String modeName = allInOne ? "All-in-one" : "Step-by-step";
 
@@ -79,8 +83,12 @@ public class PieMaker extends FreeScript {
         y = PaintStyle.drawLine(c, "Mode: " + modeName, y, PaintStyle.TEXT_COLOR_BRAND);
         y = PaintStyle.drawLine(c, "Stage: " + stage.getString(), y, PaintStyle.TEXT_COLOR_TASK);
         y = PaintStyle.drawLine(c, "Runtime: " + runtime, y, PaintStyle.TEXT_COLOR_BODY);
-        y = PaintStyle.drawLine(c, "Items made: " + itemsMade, y, PaintStyle.TEXT_COLOR_SUCCESS);
-        y = PaintStyle.drawLine(c, "Per hour: " + perHour, y, PaintStyle.TEXT_COLOR_BODY);
+
+        y = PaintStyle.drawLine(c, "Stats:", y, PaintStyle.TEXT_COLOR_TITLE);
+        y = PaintStyle.drawLine(c, "  Pastry Dough: " + pastryDoughMade, y, PaintStyle.TEXT_COLOR_SUCCESS);
+        y = PaintStyle.drawLine(c, "  Pie Shells: " + pieShellsMade, y, PaintStyle.TEXT_COLOR_SUCCESS);
+        y = PaintStyle.drawLine(c, "  Uncooked Pies: " + uncookedPiesMade, y, PaintStyle.TEXT_COLOR_SUCCESS);
+        y = PaintStyle.drawLine(c, "  Cooked Pies: " + cookedPiesMade, y, PaintStyle.TEXT_COLOR_SUCCESS);
 
         y = PaintStyle.drawLine(c, "Bank Materials:", y, PaintStyle.TEXT_COLOR_TITLE);
         y = PaintStyle.drawLine(c, "  Flour: " + bankFlour, y, PaintStyle.TEXT_COLOR_MUTED);
@@ -147,7 +155,47 @@ public class PieMaker extends FreeScript {
         return detectedRegion == Constants.LUMBRIDGE_REGION;
     }
 
-    public void increaseItemsMade(int count) {
-        itemsMade += count;
+    // Stat names for server
+    private static final String STAT_PASTRY_DOUGH = "pastry_dough_made";
+    private static final String STAT_PIE_SHELLS = "pie_shells_made";
+    private static final String STAT_UNCOOKED_PIES = "uncooked_pies_made";
+    private static final String STAT_COOKED_PIES = "cooked_pies_made";
+    private static final String STAT_LAP_TIME = "pie_lap_time";
+
+    public void increasePastryDoughMade(int count) {
+        pastryDoughMade += count;
+        if (firstRoundComplete) {
+            sendStat(STAT_PASTRY_DOUGH, count);
+        }
+    }
+
+    public void increasePieShellsMade(int count) {
+        pieShellsMade += count;
+        if (firstRoundComplete) {
+            sendStat(STAT_PIE_SHELLS, count);
+        }
+    }
+
+    public void increaseUncookedPiesMade(int count) {
+        uncookedPiesMade += count;
+        if (firstRoundComplete) {
+            sendStat(STAT_UNCOOKED_PIES, count);
+        }
+    }
+
+    public void increaseCookedPiesMade(int count) {
+        cookedPiesMade += count;
+        if (firstRoundComplete) {
+            sendStat(STAT_COOKED_PIES, count);
+        }
+    }
+
+    public void completeLap() {
+        if (firstRoundComplete) {
+            long lapTimeMs = System.currentTimeMillis() - lapStartTime;
+            sendStat(STAT_LAP_TIME, lapTimeMs);
+        }
+        firstRoundComplete = true;
+        lapStartTime = System.currentTimeMillis();
     }
 }

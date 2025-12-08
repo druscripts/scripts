@@ -16,7 +16,7 @@ public class MakeUncookedPieTask extends Task {
         this.pieMaker = script;
         this.combineTask = new CombineItemsTask(
             script, pieMaker.pieType.getIngredientId(), Constants.PIE_SHELL, pieMaker.pieType.getUncookedId(),
-            "MakeUncookedPie", pieMaker::increaseItemsMade
+            "MakeUncookedPie", pieMaker::increaseUncookedPiesMade
         );
     }
 
