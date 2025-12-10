@@ -8,7 +8,7 @@ set -e  # Exit on error
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/build"
 JAVA_DIR="$SCRIPT_DIR/src"
-scripts=(dyemaker piemaker)
+scripts=(dyemaker piemaker enchanter)
 
 echo "=== Druscripts Free OSMB Build Script ==="
 echo
