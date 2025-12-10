@@ -74,6 +74,10 @@ public enum EnchantLevel {
         return "Lvl-" + level + " Enchant (" + gemType + ")";
     }
 
+    public String getSpellName() {
+        return "Lvl-" + level + " Enchant";
+    }
+
     public String getRuneString() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < runes.length; i++) {

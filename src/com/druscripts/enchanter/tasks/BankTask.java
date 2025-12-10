@@ -15,7 +15,6 @@ import javafx.scene.control.Alert;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -89,8 +88,7 @@ public class BankTask extends Task {
         try {
             if (!InventoryUtils.isEmpty(enchanter)) {
                 enchanter.task = "Depositing";
-                Set<Integer> keepItems = getRuneIdsToKeep();
-                if (!enchanter.getWidgetManager().getBank().depositAll(keepItems)) {
+                if (!enchanter.getWidgetManager().getBank().depositAll(Collections.emptySet())) {
                     enchanter.log(getClass(), "Deposit failed");
                     return;
                 }
@@ -116,15 +114,6 @@ public class BankTask extends Task {
         enchanter.completeLap();
         enchanter.log(getClass(), "Closing bank...");
         enchanter.getWidgetManager().getBank().close();
-    }
-
-    private Set<Integer> getRuneIdsToKeep() {
-        Set<Integer> runeIds = new HashSet<>();
-        EnchantLevel.RuneRequirement[] runes = enchanter.enchantLevel.getRunes();
-        for (EnchantLevel.RuneRequirement rune : runes) {
-            runeIds.add(rune.getRuneId());
-        }
-        return runeIds;
     }
 
     private void openBank() {
@@ -193,23 +182,45 @@ public class BankTask extends Task {
         enchanter.stop();
     }
 
+    /**
+     * Calculate how many items we can enchant this trip based on available resources.
+     */
+    private int calculateBatchSize() {
+        // Start with max possible
+        int batchSize = enchanter.maxBatchSize;
+
+        // Limit by available unenchanted items
+        batchSize = Math.min(batchSize, enchanter.bankUnenchanted);
+
+        // Limit by available runes
+        EnchantLevel.RuneRequirement[] runes = enchanter.enchantLevel.getRunes();
+        for (EnchantLevel.RuneRequirement rune : runes) {
+            int runesAvailable = getBankAmount(rune.getRuneId());
+            int enchantsFromRune = runesAvailable / rune.getAmount();
+            batchSize = Math.min(batchSize, enchantsFromRune);
+        }
+
+        return batchSize;
+    }
+
     private boolean withdrawItems() {
-        // First, withdraw runes if we don't have enough for a full inventory
-        if (!withdrawRunes()) {
+        int batchSize = calculateBatchSize();
+        if (batchSize <= 0) {
+            enchanter.log(getClass(), "Cannot calculate valid batch size");
+            return false;
+        }
+
+        enchanter.log(getClass(), "Batch size: " + batchSize);
+
+        // First, withdraw runes for the batch
+        if (!withdrawRunes(batchSize)) {
             return false;
         }
 
         int unenchantedId = enchanter.enchantableItem.getUnenchantedId();
 
-        // Withdraw unenchanted items (fill inventory)
-        ItemGroupResult bank = enchanter.getWidgetManager().getBank().search(Set.of(unenchantedId));
-        if (bank == null || !bank.contains(unenchantedId)) {
-            enchanter.log(getClass(), "No unenchanted items in bank");
-            return false;
-        }
-
-        // Withdraw all available (up to inventory space)
-        if (!enchanter.getWidgetManager().getBank().withdraw(unenchantedId, Integer.MAX_VALUE)) {
+        // Withdraw unenchanted items
+        if (!enchanter.getWidgetManager().getBank().withdraw(unenchantedId, batchSize)) {
             enchanter.log(getClass(), "Failed to withdraw unenchanted items");
             return false;
         }
@@ -217,28 +228,15 @@ public class BankTask extends Task {
         return true;
     }
 
-    private boolean withdrawRunes() {
+    private boolean withdrawRunes(int batchSize) {
         EnchantLevel.RuneRequirement[] runes = enchanter.enchantLevel.getRunes();
 
-        // Calculate how many items we can enchant (roughly 27 slots for items, rest for runes)
-        // For simplicity, withdraw enough runes for ~27 enchants
-        int enchantsPerTrip = 27;
-
         for (EnchantLevel.RuneRequirement rune : runes) {
-            int needed = rune.getAmount() * enchantsPerTrip;
-            int have = getInventoryAmount(rune.getRuneId());
+            int needed = rune.getAmount() * batchSize;
 
-            if (have < needed) {
-                int toWithdraw = needed - have;
-                int bankHas = getBankAmount(rune.getRuneId());
-
-                if (bankHas > 0) {
-                    int withdrawAmount = Math.min(toWithdraw, bankHas);
-                    if (!enchanter.getWidgetManager().getBank().withdraw(rune.getRuneId(), withdrawAmount)) {
-                        enchanter.log(getClass(), "Failed to withdraw " + rune.getRuneName() + " runes");
-                        return false;
-                    }
-                }
+            if (!enchanter.getWidgetManager().getBank().withdraw(rune.getRuneId(), needed)) {
+                enchanter.log(getClass(), "Failed to withdraw " + rune.getRuneName() + " runes");
+                return false;
             }
         }
         return true;

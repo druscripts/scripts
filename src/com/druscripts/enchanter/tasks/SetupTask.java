@@ -43,9 +43,17 @@ public class SetupTask extends Task {
 
         enchanter.enchantLevel = ui.getSelectedLevel();
         enchanter.enchantableItem = ui.getSelectedItem();
+        enchanter.hyperEfficientMode = ui.isHyperEfficientMode();
 
         enchanter.log(getClass(), "Level: " + enchanter.enchantLevel.getDisplayName());
         enchanter.log(getClass(), "Item: " + enchanter.enchantableItem.getUnenchantedName());
+        enchanter.log(getClass(), "Hyper Efficient Mode: " + (enchanter.hyperEfficientMode ? "ON" : "OFF"));
+
+        // Calculate batch sizes based on rune requirements
+        enchanter.runeSlots = enchanter.enchantLevel.getRunes().length;
+        enchanter.maxBatchSize = 28 - enchanter.runeSlots;
+        enchanter.log(getClass(), "Rune slots: " + enchanter.runeSlots + ", Max batch size: " + enchanter.maxBatchSize);
+
         enchanter.log(getClass(), "Setup complete!");
 
         enchanter.initializeTasks();
