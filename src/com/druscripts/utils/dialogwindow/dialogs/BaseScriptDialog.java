@@ -8,6 +8,7 @@ import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
@@ -68,6 +69,9 @@ public abstract class BaseScriptDialog {
     // Pending click (consumed during render)
     protected double clickX = -1;
     protected double clickY = -1;
+
+    // Pending key event (consumed during render)
+    protected KeyEvent pendingKeyEvent = null;
 
     // True when user clicks Start button
     protected volatile boolean started = false;
@@ -163,6 +167,8 @@ public abstract class BaseScriptDialog {
 
         canvas.setOnMouseClicked(this::handleClick);
         canvas.setOnScroll(this::handleScroll);
+        canvas.setOnKeyPressed(this::handleKeyPressed);
+        canvas.setFocusTraversable(true);
 
         // Animation loop - redraw everything each frame
         AnimationTimer timer = new AnimationTimer() {
@@ -199,6 +205,9 @@ public abstract class BaseScriptDialog {
         // Clear pending click after render (subclass had chance to consume it)
         clickX = -1;
         clickY = -1;
+
+        // Clear pending key event
+        pendingKeyEvent = null;
     }
 
     private void renderLeftColumn(GraphicsContext gc) {
@@ -294,11 +303,24 @@ public abstract class BaseScriptDialog {
         onScroll(e.getDeltaY());
     }
 
+    private void handleKeyPressed(KeyEvent e) {
+        pendingKeyEvent = e;
+        onKeyPressed(e);
+    }
+
     /**
      * Called when the user scrolls. Override to handle scroll events.
      * @param deltaY Positive for scroll up, negative for scroll down
      */
     protected void onScroll(double deltaY) {
+        // Default: no-op. Subclasses can override.
+    }
+
+    /**
+     * Called when a key is pressed. Override to handle keyboard input.
+     * @param e The key event
+     */
+    protected void onKeyPressed(KeyEvent e) {
         // Default: no-op. Subclasses can override.
     }
 
