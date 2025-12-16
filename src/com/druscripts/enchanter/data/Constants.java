@@ -126,6 +126,12 @@ public final class Constants {
     public static final int SUBMENU_BACK_SPRITE_1 = 5585;
     public static final int SUBMENU_BACK_SPRITE_2 = 5597;
 
+    // === XP Per Enchant Level ===
+    public static final int[] XP_PER_LEVEL = { 0, 18, 37, 59, 67, 78, 97, 110 };
+
+    // === Regions ===
+    public static final int GRAND_EXCHANGE_REGION = 12598;
+
     // === Bank Detection ===
     public static final String[] BANK_NAMES = {
         "Bank", "Chest", "Bank booth", "Bank chest",

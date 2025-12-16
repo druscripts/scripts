@@ -1,5 +1,6 @@
 package com.druscripts.enchanter;
 
+import com.druscripts.enchanter.data.Constants;
 import com.druscripts.enchanter.data.EnchantableItem;
 import com.druscripts.enchanter.data.EnchantLevel;
 import com.druscripts.enchanter.data.Stage;
@@ -20,7 +21,7 @@ import java.text.DecimalFormat;
     name = "Enchanter.druscripts.com",
     description = "Enchants jewellery using the standard spellbook - supports all enchant levels",
     skillCategory = SkillCategory.MAGIC,
-    version = 0.1,
+    version = 1.0,
     author = "dru"
 )
 public class Enchanter extends FreeScript {
@@ -40,15 +41,12 @@ public class Enchanter extends FreeScript {
     public long lapStartTime = System.currentTimeMillis();
     public int startMagicLevel = 0;
 
-    // Bank tracking
     public int bankUnenchanted = 0;
     public int bankEnchanted = 0;
 
-    // Batch calculation (set during setup)
+    // Batch calculation
     public int runeSlots = 0;        // Number of inventory slots needed for runes
-    public int maxBatchSize = 0;     // Max items we can enchant per trip (based on inventory space)
-
-    private static final int GRAND_EXCHANGE_REGION = 12598;
+    public int maxBatchSize = 0;
 
     public Enchanter(Object scriptCore) {
         super(scriptCore);
@@ -56,7 +54,7 @@ public class Enchanter extends FreeScript {
 
     @Override
     public int[] regionsToPrioritise() {
-        return new int[] { GRAND_EXCHANGE_REGION };
+        return new int[] { Constants.GRAND_EXCHANGE_REGION };
     }
 
     @Override
@@ -79,7 +77,7 @@ public class Enchanter extends FreeScript {
     }
 
     private final int WIDTH = 210;
-    private final int NUM_LINES = 11;
+    private final int NUM_LINES = 10;
     private static final DecimalFormat FORMAT = new DecimalFormat("#,###");
 
     @Override
@@ -114,6 +112,8 @@ public class Enchanter extends FreeScript {
         y = PaintStyle.drawLine(c, "Bank:", y, PaintStyle.TEXT_COLOR_TITLE);
         y = PaintStyle.drawLine(c, "  Unenchanted: " + FORMAT.format(bankUnenchanted), y, PaintStyle.TEXT_COLOR_MUTED);
         PaintStyle.drawLine(c, "  Enchanted: " + FORMAT.format(bankEnchanted), y, PaintStyle.TEXT_COLOR_MUTED);
+
+        paintUpdateNotice(c, WIDTH, NUM_LINES);
     }
 
     public void initializeTasks() {
@@ -131,23 +131,75 @@ public class Enchanter extends FreeScript {
         return String.format("%02d:%02d:%02d", hours, minutes, secs);
     }
 
-    // Stat names for server
-    private static final String STAT_ITEMS_ENCHANTED = "items_enchanted";
-    private static final String STAT_LAP_TIME = "enchant_lap_time";
+    // Track XP and items for the current lap (to send when completing lap)
+    private int lapItemsEnchanted = 0;
+    private int lapXpGained = 0;
+    private int lastKnownMagicLevel = 0;
 
     public void increaseItemsEnchanted(int count) {
         itemsEnchanted += count;
-        if (firstRoundComplete) {
-            sendStat(STAT_ITEMS_ENCHANTED, count);
-        }
+        lapItemsEnchanted += count;
+        // Calculate XP gained
+        int xpPerItem = Constants.XP_PER_LEVEL[enchantLevel.getLevel()];
+        lapXpGained += count * xpPerItem;
     }
 
-    public void completeLap() {
-        if (firstRoundComplete) {
-            long lapTimeMs = System.currentTimeMillis() - lapStartTime;
-            sendStat(STAT_LAP_TIME, lapTimeMs);
+    /**
+     * Gets the current magic level from the XP tracker.
+     */
+    private int getCurrentMagicLevel() {
+        XPTracker magicTracker = getXPTrackers().get(SkillType.MAGIC);
+        if (magicTracker != null) {
+            return magicTracker.getLevel();
         }
+        return 0;
+    }
+
+    /**
+     * Called when banking completes - sends stats for the lap.
+     * Stats are sent in format: lvl_{level}_{mode}_{stat}
+     * e.g., lvl_1_xp, lvl_1_hyper_xp, lvl_1_items, lvl_1_hyper_items
+     */
+    public void completeLap() {
+        // Check for level ups
+        int currentMagicLevel = getCurrentMagicLevel();
+        int levelsGainedThisLap = 0;
+
+        if (lastKnownMagicLevel > 0 && currentMagicLevel > lastKnownMagicLevel) {
+            levelsGainedThisLap = currentMagicLevel - lastKnownMagicLevel;
+        }
+
+        // Update last known level (or initialize it)
+        if (currentMagicLevel > 0) {
+            lastKnownMagicLevel = currentMagicLevel;
+        }
+
+        if (firstRoundComplete && lapItemsEnchanted > 0) {
+            // Build stat keys based on level and mode
+            int level = enchantLevel.getLevel();
+            String prefix = hyperEfficientMode
+                ? "lvl_" + level + "_hyper_"
+                : "lvl_" + level + "_";
+
+            // Send XP
+            sendStat(prefix + "xp", lapXpGained);
+
+            // Send items enchanted
+            sendStat(prefix + "items", lapItemsEnchanted);
+
+            // Send lap time (runtime for this lap)
+            long lapTimeMs = System.currentTimeMillis() - lapStartTime;
+            sendStat(prefix + "runtime_ms", lapTimeMs);
+
+            // Send levels gained (if any)
+            if (levelsGainedThisLap > 0) {
+                sendStat(prefix + "lvls", levelsGainedThisLap);
+            }
+        }
+
         firstRoundComplete = true;
         lapStartTime = System.currentTimeMillis();
+        lapItemsEnchanted = 0;
+        lapXpGained = 0;
     }
 }

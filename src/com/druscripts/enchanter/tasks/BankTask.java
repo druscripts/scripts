@@ -38,38 +38,23 @@ public class BankTask extends Task {
 
     @Override
     public boolean activate() {
-        return needsToBank();
-    }
-
-    private boolean needsToBank() {
         try {
-            int unenchantedId = enchanter.enchantableItem.getUnenchantedId();
-            int enchantedId = enchanter.enchantableItem.getEnchantedId();
+            boolean hasEnchanted = InventoryUtils.hasAnyItem(enchanter, enchanter.enchantableItem.getEnchantedId());
+            boolean hasUnenchanted = InventoryUtils.hasItem(enchanter, enchanter.enchantableItem.getUnenchantedId());
 
-            boolean hasEnchanted = InventoryUtils.hasAnyItem(enchanter, enchantedId);
-            boolean hasUnenchanted = InventoryUtils.hasItem(enchanter, unenchantedId);
-
-            // Check if we have all required runes in inventory
-            boolean hasAllRunes = hasRequiredRunes();
-
-            return hasEnchanted || !hasUnenchanted || !hasAllRunes;
-        } catch (CannotOpenWidgetException e) {
-            enchanter.log(getClass(), e.getMessage());
-            return false;
-        }
-    }
-
-    private boolean hasRequiredRunes() {
-        try {
+            boolean hasAllRunes = true;
             EnchantLevel.RuneRequirement[] runes = enchanter.enchantLevel.getRunes();
             for (EnchantLevel.RuneRequirement rune : runes) {
                 int count = InventoryUtils.getItemCount(enchanter, rune.getRuneId());
                 if (count < rune.getAmount()) {
-                    return false;
+                    hasAllRunes = false;
+                    break;
                 }
             }
-            return true;
+
+            return hasEnchanted || !hasUnenchanted || !hasAllRunes;
         } catch (CannotOpenWidgetException e) {
+            enchanter.log(getClass(), e.getMessage());
             return false;
         }
     }
@@ -148,7 +133,7 @@ public class BankTask extends Task {
         if (enchanter.bankUnenchanted <= 0) {
             return false;
         }
-        // Check runes - need enough for at least one enchant
+
         EnchantLevel.RuneRequirement[] runes = enchanter.enchantLevel.getRunes();
         for (EnchantLevel.RuneRequirement rune : runes) {
             int bankAmount = getBankAmount(rune.getRuneId());
@@ -182,17 +167,9 @@ public class BankTask extends Task {
         enchanter.stop();
     }
 
-    /**
-     * Calculate how many items we can enchant this trip based on available resources.
-     */
     private int calculateBatchSize() {
-        // Start with max possible
-        int batchSize = enchanter.maxBatchSize;
+        int batchSize = Math.min(enchanter.maxBatchSize, enchanter.bankUnenchanted);
 
-        // Limit by available unenchanted items
-        batchSize = Math.min(batchSize, enchanter.bankUnenchanted);
-
-        // Limit by available runes
         EnchantLevel.RuneRequirement[] runes = enchanter.enchantLevel.getRunes();
         for (EnchantLevel.RuneRequirement rune : runes) {
             int runesAvailable = getBankAmount(rune.getRuneId());
@@ -212,15 +189,11 @@ public class BankTask extends Task {
 
         enchanter.log(getClass(), "Batch size: " + batchSize);
 
-        // First, withdraw runes for the batch
         if (!withdrawRunes(batchSize)) {
             return false;
         }
 
-        int unenchantedId = enchanter.enchantableItem.getUnenchantedId();
-
-        // Withdraw unenchanted items
-        if (!enchanter.getWidgetManager().getBank().withdraw(unenchantedId, batchSize)) {
+        if (!enchanter.getWidgetManager().getBank().withdraw(enchanter.enchantableItem.getUnenchantedId(), batchSize)) {
             enchanter.log(getClass(), "Failed to withdraw unenchanted items");
             return false;
         }
