@@ -22,7 +22,7 @@ import java.util.Random;
     name = "DyeMaker.druscripts.com",
     description = "Makes dyes at Aggie's shop in Draynor Village.",
     skillCategory = SkillCategory.OTHER,
-    version = 1.2,
+    version = 1.3,
     author = "dru"
 )
 public class DyeMaker extends FreeScript {
@@ -83,6 +83,8 @@ public class DyeMaker extends FreeScript {
         y = PaintStyle.drawLine(c, "Runtime: " + runtime, y, PaintStyle.TEXT_COLOR_BODY);
         y = PaintStyle.drawLine(c, "Dyes made: " + dyesMade, y, PaintStyle.TEXT_COLOR_SUCCESS);
         PaintStyle.drawLine(c, "Per hour: " + perHour, y, PaintStyle.TEXT_COLOR_BODY);
+
+        paintUpdateNotice(c, WIDTH, NUM_LINES);
     }
 
     private String formatRuntime(long millis) {
