@@ -15,7 +15,7 @@ import com.osmb.api.script.SkillCategory;
     name = "PieMaker.druscripts.com",
     description = "All-in-one Lumbridge pie making - from flour to cooked pies",
     skillCategory = SkillCategory.COOKING,
-    version = 1.0,
+    version = 1.1,
     author = "dru"
 )
 public class PieMaker extends FreeScript {
@@ -98,6 +98,9 @@ public class PieMaker extends FreeScript {
         y = PaintStyle.drawLine(c, "  Pie Shells: " + bankPieShells, y, PaintStyle.TEXT_COLOR_MUTED);
         y = PaintStyle.drawLine(c, "  " + pieType.getIngredientName() + ": " + bankIngredients, y, PaintStyle.TEXT_COLOR_MUTED);
         PaintStyle.drawLine(c, "  Uncooked Pies: " + bankUncookedPies, y, PaintStyle.TEXT_COLOR_MUTED);
+
+        // Show update notification if available
+        paintUpdateNotice(c, WIDTH, NUM_LINES);
     }
 
     public void initializeProductionTasks() {
