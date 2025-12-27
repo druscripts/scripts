@@ -78,6 +78,14 @@ for script in "${scripts[@]}"; do
     # Copy script-specific classes
     cp -r "$script_pkg_dir" "$jar_temp/com/druscripts/"
 
+    # Copy script-specific resources (sprites, images, etc.)
+    script_resources_dir="$JAVA_DIR/com/druscripts/$script/resources"
+    if [ -d "$script_resources_dir" ]; then
+        echo "  Copying resources..."
+        mkdir -p "$jar_temp/com/druscripts/$script/resources"
+        cp -r "$script_resources_dir/"* "$jar_temp/com/druscripts/$script/resources/" 2>/dev/null || true
+    fi
+
     # Create JAR
     jar_name="$script.druscripts.com.jar"
     echo "  Creating JAR: $jar_name"

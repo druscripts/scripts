@@ -4,6 +4,7 @@ import com.druscripts.enchanter.Enchanter;
 import com.druscripts.enchanter.data.Constants;
 import com.druscripts.enchanter.data.EnchantLevel;
 import com.druscripts.enchanter.data.Stage;
+import com.druscripts.enchanter.util.SpriteSearch;
 import com.druscripts.utils.script.Task;
 import com.druscripts.utils.widget.InventoryUtils;
 import com.druscripts.utils.widget.exception.CannotOpenWidgetException;
@@ -39,7 +40,7 @@ public class BankTask extends Task {
     @Override
     public boolean activate() {
         try {
-            boolean hasEnchanted = InventoryUtils.hasAnyItem(enchanter, enchanter.enchantableItem.getEnchantedId());
+            boolean hasEnchanted = hasEnchantedItems();
             boolean hasUnenchanted = InventoryUtils.hasItem(enchanter, enchanter.enchantableItem.getUnenchantedId());
 
             boolean hasAllRunes = true;
@@ -55,6 +56,22 @@ public class BankTask extends Task {
             return hasEnchanted || !hasUnenchanted || !hasAllRunes;
         } catch (CannotOpenWidgetException e) {
             enchanter.log(getClass(), e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Checks if inventory contains enchanted items.
+     * Uses sprite search for items with missing IDs.
+     */
+    private boolean hasEnchantedItems() {
+        if (enchanter.enchantableItem.requiresSpriteSearch()) {
+            String spriteName = enchanter.enchantableItem.getEnchantedSpriteName();
+            return SpriteSearch.hasItemInInventory(enchanter, spriteName);
+        }
+        try {
+            return InventoryUtils.hasAnyItem(enchanter, enchanter.enchantableItem.getEnchantedId());
+        } catch (CannotOpenWidgetException e) {
             return false;
         }
     }
@@ -120,13 +137,24 @@ public class BankTask extends Task {
 
     private void updateBankCounts() {
         enchanter.bankUnenchanted = getBankAmount(enchanter.enchantableItem.getUnenchantedId());
-        enchanter.bankEnchanted = getBankAmount(enchanter.enchantableItem.getEnchantedId());
+        // Use sprite search for enchanted items with missing IDs
+        if (enchanter.enchantableItem.requiresSpriteSearch()) {
+            String spriteName = enchanter.enchantableItem.getEnchantedSpriteName();
+            enchanter.bankEnchanted = SpriteSearch.hasItemInBank(enchanter, spriteName) ? 1 : 0;
+        } else {
+            enchanter.bankEnchanted = getBankAmount(enchanter.enchantableItem.getEnchantedId());
+        }
     }
 
     private int getBankAmount(int itemId) {
-        ItemGroupResult bank = enchanter.getWidgetManager().getBank().search(Set.of(itemId));
-        if (bank == null || !bank.contains(itemId)) return 0;
-        return bank.getAmount(new int[]{itemId});
+        try {
+            ItemGroupResult bank = enchanter.getWidgetManager().getBank().search(Set.of(itemId));
+            if (bank == null || !bank.contains(itemId)) return 0;
+            return bank.getAmount(new int[]{itemId});
+        } catch (Exception e) {
+            // Item ID not recognized by OSMB
+            return 0;
+        }
     }
 
     private boolean canEnchant() {

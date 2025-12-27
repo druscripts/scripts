@@ -1,5 +1,7 @@
 package com.druscripts.enchanter.data;
 
+import java.util.Arrays;
+
 public enum EnchantableItem {
     // Level 1 - Sapphire
     SAPPHIRE_RING_ITEM(EnchantLevel.LEVEL_1, Constants.SAPPHIRE_RING, Constants.RING_OF_RECOIL, "Sapphire ring", "Ring of recoil"),
@@ -44,10 +46,10 @@ public enum EnchantableItem {
     DIAMOND_AMULET_ITEM(EnchantLevel.LEVEL_4, Constants.DIAMOND_AMULET, Constants.AMULET_OF_POWER, "Diamond amulet", "Amulet of power"),
 
     // Level 5 - Dragonstone
-    DRAGONSTONE_RING_ITEM(EnchantLevel.LEVEL_5, Constants.DRAGONSTONE_RING, Constants.RING_OF_WEALTH_UNCHARGED, "Dragonstone ring", "Ring of wealth (uncharged)"),
-    DRAGONSTONE_NECKLACE_ITEM(EnchantLevel.LEVEL_5, Constants.DRAGONSTONE_NECKLACE, Constants.SKILLS_NECKLACE_UNCHARGED, "Dragonstone necklace", "Skills necklace (uncharged)"),
-    DRAGONSTONE_BRACELET_ITEM(EnchantLevel.LEVEL_5, Constants.DRAGONSTONE_BRACELET, Constants.COMBAT_BRACELET_UNCHARGED, "Dragonstone bracelet", "Combat bracelet (uncharged)"),
-    DRAGONSTONE_AMULET_ITEM(EnchantLevel.LEVEL_5, Constants.DRAGONSTONE_AMULET, Constants.AMULET_OF_GLORY_UNCHARGED, "Dragonstone amulet", "Amulet of glory (uncharged)"),
+    DRAGONSTONE_RING_ITEM(EnchantLevel.LEVEL_5, Constants.DRAGONSTONE_RING, Constants.RING_OF_WEALTH_UNCHARGED, "Dragonstone ring", "Ring of wealth"),
+    DRAGONSTONE_NECKLACE_ITEM(EnchantLevel.LEVEL_5, Constants.DRAGONSTONE_NECKLACE, Constants.SKILLS_NECKLACE_UNCHARGED, "Dragonstone necklace", "Skills necklace"),
+    DRAGONSTONE_BRACELET_ITEM(EnchantLevel.LEVEL_5, Constants.DRAGONSTONE_BRACELET, Constants.COMBAT_BRACELET_UNCHARGED, "Dragonstone bracelet", "Combat bracelet"),
+    DRAGONSTONE_AMULET_ITEM(EnchantLevel.LEVEL_5, Constants.DRAGONSTONE_AMULET, Constants.AMULET_OF_GLORY_UNCHARGED, "Dragonstone amulet", "Amulet of glory"),
 
     // Level 6 - Onyx
     ONYX_RING_ITEM(EnchantLevel.LEVEL_6, Constants.ONYX_RING, Constants.RING_OF_STONE, "Onyx ring", "Ring of stone"),
@@ -100,8 +102,29 @@ public enum EnchantableItem {
         return unenchantedName + " (" + enchantedName + ")";
     }
 
+    /**
+     * Returns true if this item's enchanted form has a missing ID and requires sprite search.
+     * Checks against Constants.SPRITE_SEARCH_ITEMS array.
+     */
+    public boolean requiresSpriteSearch() {
+        return Arrays.stream(Constants.SPRITE_SEARCH_ITEMS)
+            .anyMatch(id -> id == enchantedId);
+    }
+
+    /**
+     * Returns the sprite name for items with missing IDs.
+     * Derives from enchanted name: lowercase with underscores.
+     * @return The sprite name (without .png extension), or null if ID lookup works
+     */
+    public String getEnchantedSpriteName() {
+        if (!requiresSpriteSearch()) {
+            return null;
+        }
+        return enchantedName.toLowerCase().replace(" ", "_").replace("'", "");
+    }
+
     public static EnchantableItem[] getItemsForLevel(EnchantLevel level) {
-        return java.util.Arrays.stream(values())
+        return Arrays.stream(values())
             .filter(item -> item.level == level)
             .toArray(EnchantableItem[]::new);
     }

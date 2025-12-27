@@ -21,7 +21,7 @@ import java.text.DecimalFormat;
     name = "Enchanter.druscripts.com",
     description = "Enchants jewellery using the standard spellbook - supports all enchant levels",
     skillCategory = SkillCategory.MAGIC,
-    version = 1.0,
+    version = 1.1,
     author = "dru"
 )
 public class Enchanter extends FreeScript {

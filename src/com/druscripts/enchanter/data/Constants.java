@@ -141,4 +141,17 @@ public final class Constants {
     public static final String[] BANK_ACTIONS = {
         "bank", "open", "use", "bank banker"
     };
+
+    // === Items with Missing IDs (require sprite search) ===
+    // These enchanted item IDs are not recognized by OSMB and need manual sprite detection.
+    // Sprite files should be named: lowercase item name with underscores, e.g. "games_necklace.png"
+    public static final int[] SPRITE_SEARCH_ITEMS = {
+        GAMES_NECKLACE,           // Sapphire necklace -> Games necklace
+        RING_OF_DUELING,          // Emerald ring -> Ring of dueling
+        NECKLACE_OF_PASSAGE,      // Jade necklace -> Necklace of passage
+        DIGSITE_PENDANT,          // Ruby necklace -> Digsite pendant
+        BURNING_AMULET,           // Topaz amulet -> Burning amulet
+        RING_OF_WEALTH_UNCHARGED, // Dragonstone ring -> Ring of wealth
+        SKILLS_NECKLACE_UNCHARGED // Dragonstone necklace -> Skills necklace
+    };
 }
